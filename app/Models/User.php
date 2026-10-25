@@ -2,48 +2,41 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'name', 
+        'email', 
+        'password', 
+        'role', 
+        'status_verifikasi', 
+        'catatan_verifikasi'
     ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'password', 
+        'remember_token'
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return ['email_verified_at' => 'datetime', 'password' => 'hashed'];
+    }
+
+    public function organizerProfile() { return $this->hasOne(OrganizerProfile::class); }
+    public function sponsorProfile()   { return $this->hasOne(SponsorProfile::class); }
+    public function notifikasi()       { return $this->hasMany(Notifikasi::class)->latest(); }
+
+    public function isAdmin(): bool     { return $this->role === 'admin'; }
+    public function isOrganizer(): bool { return $this->role === 'organizer'; }
+    public function isSponsor(): bool   { return $this->role === 'sponsor'; }
+    public function isVerified(): bool  { return $this->status_verifikasi === 'Disetujui'; }
+
+    public function profile() { return $this->isOrganizer() ? $this->organizerProfile : ($this->isSponsor() ? $this->sponsorProfile : null); }
+
+    public function displayName(): string
+    {
+        return $this->profile()?->nama_organisasi ?? $this->profile()?->nama_perusahaan ?? $this->name;
     }
 }
