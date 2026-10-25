@@ -66,7 +66,14 @@ Route::middleware(['auth', 'role:sponsor'])->prefix('sponsor')->name('sponsor.')
 
 // ---------- Admin ----------
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/proposal', [AdminController::class, 'proposals'])->name('proposal');                       // SCRUM-21
+    Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/akun', [AdminController::class, 'akun'])->name('akun');
+    Route::post('/akun/{user}', [AdminController::class, 'akunVerifikasi'])->name('akun.verifikasi');
+    Route::get('/proposal', [AdminController::class, 'proposals'])->name('proposal');
     Route::get('/proposal/{event}', [AdminController::class, 'proposalShow'])->name('proposal.show');
     Route::post('/proposal/{event}', [AdminController::class, 'proposalVerifikasi'])->name('proposal.verifikasi');
+    Route::get('/kegiatan', [AdminController::class, 'kegiatan'])->name('kegiatan');
+    Route::delete('/kegiatan/{event}', [AdminController::class, 'kegiatanDestroy'])->name('kegiatan.destroy');
+    Route::get('/komitmen', [AdminController::class, 'komitmen'])->name('komitmen');
+    Route::get('/pelaporan', [AdminController::class, 'pelaporan'])->name('pelaporan');
 });
