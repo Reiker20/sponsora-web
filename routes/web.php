@@ -28,8 +28,8 @@ Route::middleware('guest')->group(function () {
 // ---------- Semua pengguna login ----------
 Route::middleware('auth')->group(function () {
     Route::post('/keluar', [AuthController::class, 'logout'])->name('logout');
-    // Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifikasi');
-    // Route::get('/berkas/{jenis}/{id}', [FileController::class, 'show'])->name('files.show');
+    Route::get('/notifikasi', [NotificationController::class, 'index'])->name('notifikasi');
+    Route::get('/berkas/{jenis}/{id}', [FileController::class, 'show'])->name('files.show');
 });
 
 // ---------- Organizer ----------
@@ -59,9 +59,16 @@ Route::middleware(['auth', 'role:organizer'])->prefix('organizer')->name('organi
 
 // ---------- Sponsor ----------
 Route::middleware(['auth', 'role:sponsor'])->prefix('sponsor')->name('sponsor.')->group(function () {
-    Route::get('/dashboard', [SponsorController::class, 'dashboard'])->name('dashboard');   // SCRUM-16
-    Route::get('/profil', [SponsorController::class, 'profil'])->name('profil');            // SCRUM-11
+    Route::get('/dashboard', [SponsorController::class, 'dashboard'])->name('dashboard');
+    Route::get('/profil', [SponsorController::class, 'profil'])->name('profil');
     Route::put('/profil', [SponsorController::class, 'updateProfil'])->name('profil.update');
+
+    Route::post('/event/{event}/komitmen', [SponsorController::class, 'storeCommitment'])->name('komitmen.store');
+    Route::post('/komitmen/{commitment}/ajukan-ulang', [SponsorController::class, 'resubmit'])->name('komitmen.resubmit');
+
+    Route::get('/laporan', [SponsorController::class, 'laporanIndex'])->name('laporan.index');
+    Route::get('/laporan/{event}', [SponsorController::class, 'laporanShow'])->name('laporan.show');
+    Route::post('/laporan/{report}/tanggapi', [SponsorController::class, 'tanggapi'])->name('laporan.tanggapi');
 });
 
 // ---------- Admin ----------
