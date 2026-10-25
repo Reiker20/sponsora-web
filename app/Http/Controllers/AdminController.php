@@ -255,5 +255,13 @@ class AdminController extends Controller
             'filter' => $request->filter,
         ]);
     }
+    private function cekAdmin()
+    {
+        abort_unless(
+            auth()->check() && auth()->user()->role === 'admin',
+            403,
+            'Akses ditolak.'
+        );
+    }
 }
 
