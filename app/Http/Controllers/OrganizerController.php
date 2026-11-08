@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\Notifikasi;
 use App\Models\Report;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,7 +16,7 @@ class OrganizerController extends Controller
 {
     private function me()
     {
-        return auth()->user()->organizerProfile;
+        return Auth::user()->organizerProfile;
     }
 
     private function own(Event $event): Event
@@ -73,7 +74,8 @@ class OrganizerController extends Controller
     public function profil()
     {
         return view('organizer.profil', [
-            'user' => auth()->user(),
+            // 'user' => auth()->user(),
+            'user' => Auth::user(),
             'p' => $this->me(),
         ]);
     }
@@ -250,7 +252,7 @@ class OrganizerController extends Controller
 
         abort_unless($event->isEditable(), 403);
 
-        if (! auth()->user()->isVerified()) {
+        if (! $this->me()->user->isVerified()) {
             return back()->with(
                 'error',
                 'Akun Anda harus disetujui Admin sebelum mengajukan verifikasi proposal.'
@@ -306,17 +308,10 @@ class OrganizerController extends Controller
 
     public function komitmen(Request $request)
     {
-        $commitments = Commitment::whereIn(
-            'event_id',
-            $this->me()->events()->pluck('id')
-        )
+        $commitments = Commitment::whereIn('event_id', $this->me()->events()->pluck('id'))
             ->with(['sponsor', 'event'])
-            ->when(
-                $request->status,
-                fn ($q, $s) => $q->where('status', $s)
-            )
-            ->latest()
-            ->get();
+            ->when($request->status, fn ($q, $s) => $q->where('status', $s))
+            ->latest()->get();
 
         return view('organizer.komitmen', compact('commitments'));
     }
@@ -325,11 +320,7 @@ class OrganizerController extends Controller
     public function keputusan(Request $request, Commitment $commitment)
     {
         $this->own($commitment->event);
-
-        abort_unless(
-            $commitment->status === 'Menunggu Tanggapan',
-            403
-        );
+        abort_unless($commitment->status === 'Menunggu Tanggapan', 403);
 
         $data = $request->validate([
             'keputusan' => 'required|in:Diterima,Ditolak,Negosiasi',
@@ -337,14 +328,8 @@ class OrganizerController extends Controller
             'nominal_usulan' => 'nullable|integer|min:50000',
         ]);
 
-        if (
-            $data['keputusan'] === 'Diterima'
-            && ! $commitment->event->acceptsCommitments()
-        ) {
-            return back()->with(
-                'error',
-                'Event tidak lagi menerima komitmen.'
-            );
+        if ($data['keputusan'] === 'Diterima' && ! $commitment->event->acceptsCommitments()) {
+            return back()->with('error', 'Event tidak lagi menerima komitmen.');
         }
 
         $commitment->update([
@@ -353,16 +338,10 @@ class OrganizerController extends Controller
             'nominal_usulan' => $data['nominal_usulan'] ?? null,
         ]);
 
-        Notifikasi::kirim(
-            $commitment->sponsor->user_id,
-            "Komitmen Anda pada \"{$commitment->event->judul}\": {$data['keputusan']}.",
-            route('sponsor.dashboard')
-        );
+        Notifikasi::kirim($commitment->sponsor->user_id,
+            "Komitmen Anda pada \"{$commitment->event->judul}\": {$data['keputusan']}.", route('sponsor.dashboard'));
 
-        return back()->with(
-            'success',
-            "Komitmen ditandai {$data['keputusan']}."
-        );
+        return back()->with('success', "Komitmen ditandai {$data['keputusan']}.");
     }
 
     public function riwayat()
