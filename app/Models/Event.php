@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Builder;
 
 class Event extends Model
 {
@@ -22,13 +23,14 @@ class Event extends Model
     public function commitments()   { return $this->hasMany(Commitment::class); }
     public function reports()       { return $this->hasMany(Report::class); }
 
-    public function scopeCatalog($q) { return $q->where('status', 'Terverifikasi'); }
+    // public function scopeCatalog($q) { return $q->where('status', 'Terverifikasi'); }
+    public function scopeCatalog(Builder $q): Builder { return $q->where('status', 'Terverifikasi'); }
 
     /** Tambahkan kolom dana_sum & mitra_count agar tidak N+1 */
-    public function scopeWithFunding($q)
+    public function scopeWithFunding(Builder $q): Builder
     {
         return $q->withSum(['commitments as dana_sum' => fn ($c) => $c->where('status', 'Diterima')], 'nominal')
-                 ->withCount(['commitments as mitra_count' => fn ($c) => $c->where('status', 'Diterima')]);
+                ->withCount(['commitments as mitra_count' => fn ($c) => $c->where('status', 'Diterima')]);
     }
 
     public function getDanaTerkumpulAttribute(): int
