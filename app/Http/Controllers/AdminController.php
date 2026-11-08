@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Commitment;
 use App\Models\Event;
 use App\Models\EventVerification;
+
 use App\Models\Notifikasi;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -103,18 +104,13 @@ class AdminController extends Controller
         );
     }
 
-    // ---------- Verifikasi proposal ----------
+    // ---------- Verifikasi proposal & publikasi katalog ----------
+    
     public function proposals(Request $request)
     {
         $status = $request->input('status', 'Menunggu Verifikasi');
-
         $events = Event::with(['organizer', 'category'])
-            ->when(
-                $status !== 'Semua',
-                fn ($q) => $q->where('status', $status)
-            )
-            ->latest()
-            ->get();
+            ->when($status !== 'Semua', fn ($q) => $q->where('status', $status))->latest()->get();
 
         return view('admin.proposal', compact('events', 'status'));
     }
@@ -129,42 +125,27 @@ class AdminController extends Controller
     public function proposalVerifikasi(Request $request, Event $event)
     {
         abort_unless($event->status === 'Menunggu Verifikasi', 403);
-
         $data = $request->validate([
             'status' => 'required|in:Disetujui,Ditolak',
-            'catatan' => 'nullable|required_if:status,Ditolak|string|max:1000',
-        ], [
-            'catatan.required_if' => 'Catatan perbaikan wajib diisi saat menolak.',
-        ]);
-
-        $catatan = $data['catatan'] ?? null;
+            'catatan' => 'required_if:status,Ditolak|nullable|string|max:1000',
+        ], ['catatan.required_if' => 'Catatan perbaikan wajib diisi saat menolak.']);
 
         EventVerification::create([
-            'event_id' => $event->id,
-            'admin_id' => $request->user()->id,
-            'status' => $data['status'],
-            'catatan' => $catatan,
-            'tanggal_verifikasi' => now(),
+            'event_id' => $event->id, 'admin_id' => $request->user()->id,
+            'status' => $data['status'], 'catatan' => $data['catatan'] ?? null, 'tanggal_verifikasi' => now(),
         ]);
 
         if ($data['status'] === 'Disetujui') {
+            // Publikasi otomatis ke katalog (UC-19)
             $event->update(['status' => 'Terverifikasi']);
-
             $msg = "Proposal \"{$event->judul}\" disetujui dan tayang di katalog.";
         } else {
             $event->update(['status' => 'Perlu Revisi']);
-
-            $msg = "Proposal \"{$event->judul}\" perlu revisi: {$catatan}";
+            $msg = "Proposal \"{$event->judul}\" perlu revisi: {$data['catatan']}";
         }
+        Notifikasi::kirim($event->organizer->user_id, $msg, route('organizer.proposals'));
 
-        Notifikasi::kirim(
-            $event->organizer->user_id,
-            $msg,
-            route('organizer.proposals')
-        );
-
-        return redirect()->route('admin.proposal')
-            ->with('success', 'Hasil verifikasi tersimpan dan Organizer diberi tahu.');
+        return redirect()->route('admin.proposal')->with('success', 'Hasil verifikasi tersimpan dan Organizer diberi tahu.');
     }
 
     // ---------- Monitoring ----------
