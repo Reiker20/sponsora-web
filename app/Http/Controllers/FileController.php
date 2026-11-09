@@ -30,9 +30,15 @@ class FileController extends Controller
             $path = $report->berkas_dokumentasi;
         }
 
-        abort_unless($path && Storage::disk('local')->exists($path), 404);
+        // abort_unless($path && Storage::disk('local')->exists($path), 404);
 
-        return Storage::disk('local')->response($path);
+        // return Storage::disk('local')->response($path);
+                /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('local');
+
+        abort_unless($path && $disk->exists($path), 404);
+
+        return $disk->response($path);
     }
 
     private function authorizeReport(User $u, Report $report): void
