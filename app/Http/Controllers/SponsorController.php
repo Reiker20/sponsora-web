@@ -8,10 +8,12 @@ use App\Models\Notifikasi;
 use App\Models\Report;
 use App\Models\ReportReview;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SponsorController extends Controller
 {
-    private function me() { return auth()->user()->sponsorProfile; }
+    private function me() { return Auth::user()->sponsorProfile; }
+    // private function me() { return auth()->user()->sponsorProfile; }
 
     public function dashboard()
     {
@@ -28,8 +30,9 @@ class SponsorController extends Controller
             ],
         ]);
     }
+    public function profil() { return view('sponsor.profil', ['user' => Auth::user(), 'p' => $this->me()]); }
 
-    public function profil() { return view('sponsor.profil', ['user' => auth()->user(), 'p' => $this->me()]); }
+    // public function profil() { return view('sponsor.profil', ['user' => auth()->user(), 'p' => $this->me()]); }
 
     public function updateProfil(Request $request)
     {
