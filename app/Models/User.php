@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
+    use HasFactory;
+
     protected $fillable = [
         'name', 
         'email', 
@@ -31,7 +34,7 @@ class User extends Authenticatable
     public function isAdmin(): bool     { return $this->role === 'admin'; }
     public function isOrganizer(): bool { return $this->role === 'organizer'; }
     public function isSponsor(): bool   { return $this->role === 'sponsor'; }
-    public function isVerified(): bool  { return $this->status_verifikasi === 'Disetujui'; }
+    public function isVerified(): bool  { return in_array($this->status_verifikasi, ['Disetujui', 'Terverifikasi'], true); }
 
     public function profile() { return $this->isOrganizer() ? $this->organizerProfile : ($this->isSponsor() ? $this->sponsorProfile : null); }
 

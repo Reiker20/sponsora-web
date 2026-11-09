@@ -16,7 +16,13 @@ class OrganizerController extends Controller
 {
     private function me()
     {
-        return Auth::user()->organizerProfile;
+        $user = Auth::user();
+
+        return $user->organizerProfile ?? $user->organizerProfile()->create([
+            'nama_organisasi' => $user->name,
+            'jenis' => 'HIMA/UKM',
+            'kontak' => '-',
+        ]);
     }
 
     private function own(Event $event): Event
@@ -89,19 +95,25 @@ class OrganizerController extends Controller
             'kontak' => 'required|string|max:30',
             'alamat' => 'nullable|string|max:255',
             'deskripsi' => 'nullable|string|max:1000',
+            'dokumen' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
         $request->user()->update([
             'name' => $data['name'],
         ]);
 
-        $this->me()->update(
-            collect($data)->except('name')->all()
-        );
+        $profileData = collect($data)->except(['name', 'dokumen'])->all();
+
+        if ($request->hasFile('dokumen')) {
+            $path = $request->file('dokumen')->store('legalitas');
+            $profileData['dokumen_legalitas'] = $path;
+        }
+
+        $this->me()->update($profileData);
 
         return back()->with(
             'success',
-            'Profil organisasi diperbarui.'
+            'Profil organisasi berhasil diperbarui.'
         );
     }
 
