@@ -53,9 +53,20 @@ class Event extends Model
         return max(0, (int) now()->startOfDay()->diffInDays($this->tanggal_pelaksanaan, false));
     }
 
+    // public function getCoverUrlAttribute(): ?string
+    // {
+    //     return $this->cover ? Storage::disk('public')->url($this->cover) : null;
+    // }
     public function getCoverUrlAttribute(): ?string
     {
-        return $this->cover ? Storage::disk('public')->url($this->cover) : null;
+        if (! $this->cover) {
+            return null;
+        }
+
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        return $disk->url($this->cover);
     }
 
     public function isEditable(): bool        { return in_array($this->status, ['Draft', 'Perlu Revisi'], true); }
