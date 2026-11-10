@@ -32,16 +32,29 @@
 </header>
 <div class="px-4 sm:px-6">@include('partials.flash')</div>
 <main>@yield('content')</main>
+{{-- FOOTER --}}
 <footer class="mt-20 bg-cream" id="tentang">
-  <div class="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
-    <div><div>@include('partials.logo')</div>
-      <p class="mt-3 max-w-xs text-sm text-gray-600">Sponsora mempertemukan penyelenggara kegiatan sosial dengan perusahaan pemilik program CSR. Mendukung SDG 17: Kemitraan untuk Mencapai Tujuan.</p></div>
-    <div class="grid grid-cols-2 gap-6 text-sm md:col-span-2 md:grid-cols-3">
+  <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.2fr_2fr]">
+    <div>
+      @include('partials.logo')
+      <p class="mt-4 max-w-xs text-sm text-gray-700">Ruang bertemunya aksi sosial dan dukungan perusahaan untuk dampak yang lebih luas.</p>
+      <div class="mt-5 flex gap-5">
+        @foreach(['facebook', 'youtube', 'instagram'] as $s)
+          <a href="#" aria-label="{{ ucfirst($s) }}" class="grid h-9 w-9 place-items-center rounded-full bg-lime/40 text-brand transition hover:bg-lime"><x-icon :name="$s" class="h-4 w-4"/></a>
+        @endforeach
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-6 text-sm sm:grid-cols-3">
       <div><p class="font-semibold">Platform</p><ul class="mt-3 space-y-2 text-gray-600"><li><a href="{{ route('events.index') }}">Jelajahi Event</a></li><li><a href="{{ route('home') }}#cara-kerja">Cara Kerja</a></li><li><a href="{{ route('home') }}#fitur">Fitur</a></li></ul></div>
       <div><p class="font-semibold">Perusahaan</p><ul class="mt-3 space-y-2 text-gray-600"><li>Tentang Kami</li><li>Pusat Bantuan</li><li>Hubungi Kami</li></ul></div>
       <div><p class="font-semibold">Legal</p><ul class="mt-3 space-y-2 text-gray-600"><li>Kebijakan Privasi</li><li>Syarat &amp; Ketentuan</li><li><a href="{{ route('admin.login') }}">Login Admin</a></li></ul></div>
     </div>
   </div>
-  <div class="bg-brand py-3 text-center text-xs text-white/80">© {{ date('Y') }} Sponsora. Kolaborasi untuk kebaikan.</div>
+  <div class="bg-brand">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 text-[11px] font-medium text-white sm:px-6">
+      <span class="text-left">© {{ date('Y') }} Sponsora, Kolaborasi untuk kebaikan</span>
+      <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" class="shrink-0 text-right hover:underline">Scroll to Top ^</a>
+    </div>
+  </div>
 </footer>
 </body></html>

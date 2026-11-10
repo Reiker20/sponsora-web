@@ -84,36 +84,64 @@
 </section>
 
 {{-- FITUR --}}
+@php
+$fitur = [
+  ['shield',   'Kegiatan Terverifikasi', 'Profil organizer dan kelengkapan kegiatan ditinjau sebelum dipublikasikan.'],
+  ['chart',    'Status Transparan',      'Perkembangan kerja sama dapat dipantau bersama dalam satu dashboard.'],
+  ['calendar', 'Proposal Terpusat',      'Semua proposal tersimpan rapi dan mudah ditemukan saat dibutuhkan.'],
+  ['folder',   'Dokumen Terstruktur',    'Pembayaran, laporan, dan bukti pelaksanaan tersimpan dalam satu alur.'],
+];
+@endphp
 <section id="fitur" class="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6">
-  <p class="text-sm font-semibold text-brand/70">Semua dalam satu platform</p>
-  <h2 class="mt-1 text-3xl font-bold text-brand sm:text-4xl">Dirancang untuk Kemitraan<br>yang tepercaya</h2>
-  <p class="mx-auto mt-3 max-w-lg text-sm text-gray-500">Tak lagi tercecer di email, WhatsApp, dan spreadsheet. Sponsora membuat setiap langkah lebih jelas.</p>
-  <div class="mx-auto mt-10 grid max-w-4xl gap-5 text-left sm:grid-cols-2">
-    @foreach([['Kegiatan Terverifikasi', 'Admin memeriksa akun dan proposal sebelum kegiatan dipublikasikan ke Sponsor.'], ['Status Transparan', 'Perkembangan dana dan status komitmen dapat dilihat secara real-time.'], ['Proposal Terpusat', 'Semua proposal tersimpan rapi dan mudah ditemukan dalam satu katalog.'], ['Dokumen Terstruktur', 'Laporan keuangan dan hasil program dikirim, ditinjau, dan diarsipkan di sistem.']] as [$t, $d])
-      <div class="card p-6"><span class="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-lime/40 text-brand">✓</span><h3 class="font-semibold text-brand">{{ $t }}</h3><p class="mt-1 text-sm text-gray-500">{{ $d }}</p></div>
+  <p class="text-sm font-semibold text-lime-700">Semua dalam satu platform</p>
+  <h2 class="mt-2 text-3xl font-bold leading-tight text-brand sm:text-5xl">Dirancang untuk Kemitraan<br>yang tepercaya</h2>
+  <p class="mx-auto mt-4 max-w-lg text-sm text-gray-500">Tak lagi tercecer di email, WhatsApp, dan spreadsheet. Sponsora membuat setiap langkah lebih jelas.</p>
+  <div class="mx-auto mt-10 grid max-w-6xl gap-5 text-left sm:grid-cols-2">
+    @foreach($fitur as [$icon, $t, $d])
+      <div class="rounded-3xl bg-white p-6 shadow-xl shadow-brand/5">
+        <span class="grid h-11 w-11 place-items-center rounded-xl bg-lime/30 text-brand"><x-icon :name="$icon" class="h-5 w-5"/></span>
+        <h3 class="mt-6 font-semibold text-brand">{{ $t }}</h3>
+        <p class="mt-1 text-sm text-gray-500">{{ $d }}</p>
+      </div>
     @endforeach
   </div>
 </section>
 
 {{-- CSR --}}
-<section class="mx-auto max-w-7xl px-4 sm:px-6">
-  <div class="grid items-center overflow-hidden rounded-3xl bg-lime/60 lg:grid-cols-2">
-    <div class="p-8 sm:p-12"><p class="text-sm font-semibold text-brand/70">Sesuai tujuan, tepat sasaran</p>
-      <h2 class="mt-2 text-3xl font-bold text-brand">Dari program CSR menjadi cerita perubahan.</h2>
-      <p class="mt-3 text-sm text-brand/70">Perusahaan dapat memilih kegiatan yang selaras dengan fokus CSR, sementara penyelenggara memperoleh dukungan yang terdokumentasi dan bisa dipertanggungjawabkan.</p></div>
-    <div class="h-56 bg-gradient-to-br from-brand to-emerald-600 lg:h-full"></div>
+<section class="mx-auto mt-4 max-w-7xl px-4 sm:px-6">
+  <div class="grid overflow-hidden rounded-[2rem] bg-[#eaf2d9] lg:grid-cols-[1.1fr_1fr]">
+    <div class="p-8 sm:p-12">
+      <p class="text-sm font-semibold text-lime-700">Sesuai tujuan, tepat sasaran</p>
+      <h2 class="mt-3 text-3xl font-bold leading-tight text-brand sm:text-4xl">Dari program CSR menjadi cerita perubahan.</h2>
+      <p class="mt-4 max-w-md text-sm leading-relaxed text-brand/70">Sponsora membantu perusahaan menemukan kegiatan sosial yang selaras dengan nilai dan fokus dampak mereka, sekaligus memberi organizer akses ke mitra yang tepat.</p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <span class="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 text-[11px] font-semibold text-brand shadow-sm"><x-icon name="target" class="h-4 w-4 text-lime-700"/>Pencocokan fokus CSR</span>
+        <span class="inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2.5 text-[11px] font-semibold text-brand shadow-sm"><x-icon name="link" class="h-4 w-4 text-lime-700"/>Jejak kemitraan rapi</span>
+      </div>
+    </div>
+    @if(file_exists(public_path('images/csr.jpg')))
+      <img src="{{ asset('images/csr.jpg') }}" alt="Kegiatan sosial yang didukung program CSR" class="h-64 w-full object-cover lg:h-full">
+    @else
+      <div class="h-64 bg-gradient-to-br from-brand to-emerald-600 lg:h-full"></div>
+    @endif
   </div>
 </section>
 
 {{-- CTA --}}
 @guest
 <section class="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
-  <div class="rounded-3xl bg-lime p-10 text-center sm:p-14">
-    <p class="text-sm font-semibold text-brand/70">Mulai berkolaborasi</p>
-    <h2 class="mt-2 text-3xl font-bold text-brand sm:text-4xl">Dampak besar selalu dimulai dari<br>satu koneksi.</h2>
-    <div class="mt-7 flex flex-wrap justify-center gap-3">
-      <a href="{{ route('register', ['role' => 'organizer']) }}" class="btn btn-primary">Daftar sebagai Organizer →</a>
-      <a href="{{ route('register', ['role' => 'sponsor']) }}" class="btn btn-outline">Daftar sebagai Sponsor</a></div>
+  <div class="relative overflow-hidden rounded-[2rem] bg-[#cfe45a] p-10 text-center sm:p-14">
+    <x-burst class="pointer-events-none absolute -left-24 -top-16 h-52 w-52 text-white/[.33] sm:-left-[143px] sm:-top-[87px] sm:h-[316px] sm:w-[316px]"/>
+    <x-burst class="pointer-events-none absolute -bottom-24 -right-8 h-52 w-52 text-white/[.33] sm:-bottom-[147px] sm:-right-[44px] sm:h-[316px] sm:w-[316px]"/>
+    <div class="relative">
+      <p class="text-xs font-semibold text-brand/70">Mulai berkolaborasi</p>
+      <h2 class="mt-2 text-3xl font-bold leading-tight text-brand sm:text-4xl">Dampak besar selalu dimulai dari<br>satu koneksi.</h2>
+      <p class="mx-auto mt-3 max-w-md text-xs text-brand/70">Bergabung sebagai sponsor atau organizer, dan bangun kemitraan yang memberi arti.</p>
+      <div class="mt-7 flex flex-wrap justify-center gap-3">
+        <a href="{{ route('register', ['role' => 'sponsor']) }}" class="btn btn-primary !rounded-full">Daftar Sebagai Sponsor →</a>
+        <a href="{{ route('register', ['role' => 'organizer']) }}" class="btn btn-outline !rounded-full !border-brand/40 !bg-white/30">Daftar Sebagai Organizer</a>
+      </div>
+    </div>
   </div>
 </section>
 @endguest
