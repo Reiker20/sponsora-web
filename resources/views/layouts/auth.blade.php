@@ -3,7 +3,8 @@
 <body class="font-sans antialiased">
 <div class="grid min-h-screen lg:grid-cols-2">
   <aside class="hidden flex-col justify-between bg-brand p-10 text-white lg:flex">
-    <a href="{{ route('home') }}" class="inline-block w-fit rounded-lg bg-white p-2">@include('partials.logo')</a>
+    {{-- <a href="{{ route('home') }}" class="inline-block w-fit rounded-lg bg-white p-2">@include('partials.logo')</a> --}}
+    <a href="{{ route('home') }}" class="inline-block w-fit rounded-lg bg-white p-2">@include('partials.logo', ['logoClass' => 'h-20'])</a>
     <div>
       <p class="font-semibold text-lime">Cara kerja Sponsora</p>
       <h2 class="mt-3 text-5xl font-semibold leading-tight">Kolaborasi lebih dekat, proses lebih sederhana</h2>
