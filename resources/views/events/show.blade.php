@@ -84,10 +84,56 @@
             </div>
           @endif
 
-        {{-- ===== ORGANIZER: hanya lihat ===== --}}
+        {{-- ===== ORGANIZER ===== --}}
         @elseif($u?->isOrganizer())
-          <div class="rounded-2xl bg-gray-100 p-5 text-center"><p class="text-sm font-bold text-brand">Tampilan Organizer</p>
-            <p class="mt-1 text-xs text-gray-500">Akun Organizer dapat melihat progres pendanaan tetapi tidak dapat mendanai event.</p></div>
+          @if($u->organizerProfile?->id === $event->organizer_id)
+            <div class="rounded-2xl bg-brand-50 p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold uppercase tracking-wider text-brand">Status Proposal Anda</span>
+                <x-badge :s="$event->status"/>
+              </div>
+
+              @if($event->status === 'Perlu Revisi')
+                @if($event->verifications->first()?->catatan)
+                  <div class="rounded-xl border border-orange-200 bg-orange-50 p-3 text-xs text-orange-800">
+                    <p class="font-bold">Catatan Perbaikan dari Admin:</p>
+                    <p class="mt-1">{{ $event->verifications->first()->catatan }}</p>
+                  </div>
+                @endif
+              @elseif($event->status === 'Menunggu Verifikasi')
+                <p class="text-xs text-amber-800 italic">Proposal ini sedang dalam antrean verifikasi Admin sebelum tampil di katalog publik.</p>
+              @elseif($event->status === 'Draft')
+                <p class="text-xs text-gray-600">Proposal ini masih berstatus Draft dan belum dipublikasikan ke katalog.</p>
+              @elseif($event->status === 'Terverifikasi')
+                <p class="text-xs text-emerald-800 font-medium">✓ Proposal aktif dan dapat menerima komitmen dari Sponsor.</p>
+              @endif
+
+              <div class="flex flex-col gap-2 pt-2">
+                @if($event->isEditable())
+                  <a href="{{ route('organizer.proposals.edit', $event) }}" class="btn btn-outline w-full text-center">Ubah Proposal</a>
+                  <form method="POST" action="{{ route('organizer.proposals.ajukan', $event) }}" onsubmit="return confirm('Ajukan proposal \'{{ addslashes($event->judul) }}\' untuk diverifikasi Admin? Setelah diajukan, proposal akan ditinjau Admin sebelum tayang di katalog.')">
+                    @csrf
+                    <button class="btn btn-primary w-full" @disabled(! $u->isVerified())>
+                      Ajukan Verifikasi Admin
+                    </button>
+                  </form>
+                  @unless($u->isVerified())
+                    <p class="text-[11px] text-amber-700 text-center">Akun Anda masih berstatus <b>{{ $u->status_verifikasi }}</b>. Proposal baru dapat diajukan setelah akun disetujui Admin.</p>
+                  @endunless
+                @elseif($event->status === 'Terverifikasi')
+                  <form method="POST" action="{{ route('organizer.proposals.selesai', $event) }}" onsubmit="return confirm('Tandai event selesai? Event tidak lagi menerima komitmen dan kewajiban pelaporan dibuka.')">
+                    @csrf
+                    <button class="btn btn-lime w-full">Tandai Event Selesai</button>
+                  </form>
+                @elseif(in_array($event->status, ['Selesai', 'Dilaporkan']))
+                  <a href="{{ route('organizer.laporan.show', $event) }}" class="btn btn-lime w-full text-center">Buka Laporan Pertanggungjawaban</a>
+                @endif
+              </div>
+            </div>
+          @else
+            <div class="rounded-2xl bg-gray-100 p-5 text-center"><p class="text-sm font-bold text-brand">Tampilan Organizer</p>
+              <p class="mt-1 text-xs text-gray-500">Akun Organizer dapat melihat progres pendanaan tetapi tidak dapat mendanai event ini.</p></div>
+          @endif
         @elseif($u?->isAdmin())
           <div class="rounded-2xl bg-gray-100 p-5 text-center"><p class="text-sm font-bold text-brand">Tampilan Admin</p>
             <a href="{{ route('admin.proposal.show', $event) }}" class="mt-2 inline-block text-xs font-semibold text-brand underline">Buka di panel verifikasi</a></div>
