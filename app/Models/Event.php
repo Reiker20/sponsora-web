@@ -82,4 +82,5 @@ class Event extends Model
     {
         return $this->reports->firstWhere('jenis', $jenis) ?? $this->reports()->where('jenis', $jenis)->first();
     }
+    
 }

@@ -17,4 +17,5 @@ class SponsorProfile extends Model
     ];
 
     public function user() { return $this->belongsTo(User::class); }
+    public function commitments() { return $this->hasMany(Commitment::class, 'sponsor_id'); }
 }
