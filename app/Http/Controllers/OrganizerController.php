@@ -179,9 +179,33 @@ class OrganizerController extends Controller
                 ->store('covers', 'public');
         }
 
+        $shouldAjukan = $request->input('action') === 'ajukan';
+
+        if ($shouldAjukan && ! $this->me()->user->isVerified()) {
+            return back()->withInput()->with('error', 'Akun Anda harus disetujui Admin sebelum mengajukan verifikasi proposal.');
+        }
+
         $event = $this->me()->events()->create(
-            $data + ['status' => 'Draft']
+            $data + ['status' => $shouldAjukan ? 'Menunggu Verifikasi' : 'Draft']
         );
+
+        if ($shouldAjukan) {
+            Notifikasi::kirimAdmin(
+                "Proposal baru menunggu verifikasi: {$event->judul}",
+                route('admin.proposal.show', $event)
+            );
+            Notifikasi::kirim(
+                $this->me()->user_id,
+                "Proposal \"{$event->judul}\" berhasil diajukan untuk verifikasi. Menunggu peninjauan Admin."
+            );
+
+            return redirect()
+                ->route('organizer.proposals')
+                ->with(
+                    'success',
+                    "Proposal \"{$event->judul}\" berhasil disimpan dan diajukan untuk verifikasi Admin."
+                );
+        }
 
         return redirect()
             ->route('organizer.proposals')
@@ -230,7 +254,32 @@ class OrganizerController extends Controller
                 ->store('covers', 'public');
         }
 
+        $shouldAjukan = $request->input('action') === 'ajukan';
+
+        if ($shouldAjukan && ! $this->me()->user->isVerified()) {
+            return back()->withInput()->with('error', 'Akun Anda harus disetujui Admin sebelum mengajukan verifikasi proposal.');
+        }
+
+        if ($shouldAjukan) {
+            $data['status'] = 'Menunggu Verifikasi';
+        }
+
         $event->update($data);
+
+        if ($shouldAjukan) {
+            Notifikasi::kirimAdmin(
+                "Proposal baru menunggu verifikasi: {$event->judul}",
+                route('admin.proposal.show', $event)
+            );
+            Notifikasi::kirim(
+                $this->me()->user_id,
+                "Proposal \"{$event->judul}\" berhasil diajukan untuk verifikasi. Menunggu peninjauan Admin."
+            );
+
+            return redirect()
+                ->route('organizer.proposals')
+                ->with('success', "Proposal \"{$event->judul}\" berhasil diperbarui dan diajukan untuk verifikasi Admin.");
+        }
 
         return redirect()
             ->route('organizer.proposals')
@@ -262,7 +311,7 @@ class OrganizerController extends Controller
     {
         $this->own($event);
 
-        abort_unless($event->isEditable(), 403);
+        abort_unless($event->isEditable(), 403, 'Hanya proposal Draft atau Perlu Revisi yang dapat diajukan untuk verifikasi.');
 
         if (! $this->me()->user->isVerified()) {
             return back()->with(
@@ -280,9 +329,14 @@ class OrganizerController extends Controller
             route('admin.proposal.show', $event)
         );
 
+        Notifikasi::kirim(
+            $this->me()->user_id,
+            "Proposal \"{$event->judul}\" berhasil diajukan untuk verifikasi. Menunggu peninjauan Admin."
+        );
+
         return back()->with(
             'success',
-            'Proposal diajukan. Tunggu hasil peninjauan Admin.'
+            "Proposal \"{$event->judul}\" berhasil diajukan. Tunggu hasil peninjauan Admin."
         );
     }
 
