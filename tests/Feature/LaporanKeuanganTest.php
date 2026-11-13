@@ -281,4 +281,112 @@ class LaporanKeuanganTest extends TestCase
         $viewRes->assertSee('Sewa Sound System', false);
         $viewRes->assertSee('3000000');
     }
+
+    public function test_organizer_sees_per_item_feedback_when_revision_requested(): void
+    {
+        $event = $this->createFinishedEvent();
+        $report = Report::create([
+            'event_id' => $event->id,
+            'jenis' => 'keuangan',
+            'status' => 'Perlu Revisi',
+            'tanggal_kirim' => now(),
+        ]);
+        $item = ReportItem::create([
+            'report_id' => $report->id,
+            'uraian' => 'Konsumsi Panitia',
+            'nominal' => 1000000,
+            'bukti_berkas' => 'bukti/nota_konsumsi.jpg',
+        ]);
+        \App\Models\ReportItemReview::create([
+            'report_item_id' => $item->id,
+            'sponsor_id' => $this->sponsorProfile->id,
+            'status' => 'Kurang Bukti',
+            'catatan' => 'Nota terpotong, tolong lampirkan kwitansi bermaterai',
+        ]);
+
+        $res = $this->actingAs($this->organizerUser)->get(route('organizer.laporan.show', $event));
+        $res->assertOk();
+        $res->assertSee('PT Nusantara Sejahtera');
+        $res->assertSee('Kurang Bukti');
+        $res->assertSee('Nota terpotong, tolong lampirkan kwitansi bermaterai');
+    }
+
+    public function test_organizer_preserves_item_id_and_reviews_when_updating_keuangan(): void
+    {
+        $event = $this->createFinishedEvent();
+        $report = Report::create([
+            'event_id' => $event->id,
+            'jenis' => 'keuangan',
+            'status' => 'Perlu Revisi',
+            'tanggal_kirim' => now(),
+        ]);
+        $item1 = ReportItem::create([
+            'report_id' => $report->id,
+            'uraian' => 'Item Tetap Diperbarui',
+            'nominal' => 1000000,
+            'bukti_berkas' => 'bukti/item1.jpg',
+        ]);
+        $item2 = ReportItem::create([
+            'report_id' => $report->id,
+            'uraian' => 'Item Dihapus',
+            'nominal' => 500000,
+            'bukti_berkas' => 'bukti/item2.jpg',
+        ]);
+
+        $review = \App\Models\ReportItemReview::create([
+            'report_item_id' => $item1->id,
+            'sponsor_id' => $this->sponsorProfile->id,
+            'status' => 'Kurang Bukti',
+            'catatan' => 'Perlu nota baru',
+        ]);
+
+        $newReceipt = UploadedFile::fake()->create('nota_baru.png', 200, 'image/png');
+        $newReceiptItem3 = UploadedFile::fake()->create('nota_item3.png', 200, 'image/png');
+
+        $response = $this->actingAs($this->organizerUser)->post(route('organizer.laporan.keuangan', $event), [
+            'aksi' => 'draft',
+            'items' => [
+                [
+                    'id' => $item1->id,
+                    'uraian' => 'Item Tetap Diperbarui (Updated)',
+                    'nominal' => 1200000,
+                    'bukti' => $newReceipt,
+                ],
+                [
+                    'uraian' => 'Item Baru Ditambahkan',
+                    'nominal' => 800000,
+                    'bukti' => $newReceiptItem3,
+                ],
+            ],
+        ]);
+
+        $response->assertSessionHas('success');
+
+        // Pastikan Item 1 mempertahankan ID aslinya
+        $this->assertDatabaseHas('report_items', [
+            'id' => $item1->id,
+            'uraian' => 'Item Tetap Diperbarui (Updated)',
+            'nominal' => 1200000,
+        ]);
+
+        // Pastikan review sponsor untuk Item 1 tidak hilang karena cascade delete
+        $this->assertDatabaseHas('report_item_reviews', [
+            'id' => $review->id,
+            'report_item_id' => $item1->id,
+            'sponsor_id' => $this->sponsorProfile->id,
+            'status' => 'Kurang Bukti',
+        ]);
+
+        // Pastikan Item 2 yang dibuang benar-benar terhapus
+        $this->assertDatabaseMissing('report_items', [
+            'id' => $item2->id,
+        ]);
+
+        // Pastikan Item Baru berhasil dibuat
+        $this->assertDatabaseHas('report_items', [
+            'report_id' => $report->id,
+            'uraian' => 'Item Baru Ditambahkan',
+            'nominal' => 800000,
+        ]);
+    }
 }
