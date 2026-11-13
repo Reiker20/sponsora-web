@@ -66,7 +66,7 @@ Setiap anggota tim bertanggung jawab atas **6 User Story** (masing-masing terdir
 | **SCRUM-14** | SCRUM-13 | Melihat Detail Event | Sponsor | Ahfiya Z. | `[x]` Done |
 | **SCRUM-15** | SCRUM-14 | Mengajukan Komitmen Dana | Sponsor | Agus Permana | `[x]` Done |
 | **SCRUM-16** | SCRUM-15 | Melacak Progres Dana | Sponsor | Abdulloh Al Wahabi | `[ ]` To Do |
-| **SCRUM-17** | SCRUM-16 | Melihat Riwayat Kemitraan (Sponsor) | Sponsor | Reika Elvaretta | `[ ]` To Do |
+| **SCRUM-17** | SCRUM-16 | Melihat Riwayat Kemitraan (Sponsor) | Sponsor | Reika Elvaretta | `[x]` Done |
 | **SCRUM-18** | SCRUM-17 | Melihat Dashboard Sponsor | Sponsor | Ilham Hilmi | `[x]` Done |
 | **SCRUM-19** | SCRUM-18 | Login Admin | Admin | Ahfiya Z. | `[x]` Done |
 | **SCRUM-20** | SCRUM-19 | Memverifikasi Akun Organizer | Admin | Agus Permana | `[x]` Done |
@@ -212,13 +212,13 @@ Setiap anggota tim bertanggung jawab atas **6 User Story** (masing-masing terdir
   - [ ] **Backend:** Buat *accessor* / metode `hitungProgresDana()` pada model `Event` yang menjumlahkan `SUM(nominal)` dari `commitments` berstatus `'Diterima'` secara *real-time*.
   - [ ] **Testing:** Uji penerimaan komitmen baru oleh Organizer dan pastikan *progress bar* di sisi Sponsor langsung bertambah secara otomatis.
 
-#### 16. `[ ]` SCRUM-17 *(Proposal: SCRUM-16)*: Melihat Riwayat Kemitraan (Sponsor)
+#### 16. `[x]` SCRUM-17 *(Proposal: SCRUM-16)*: Melihat Riwayat Kemitraan (Sponsor)
 * **Kebutuhan & Use Case:** `FR-SPO-07` | `UC-15`
 * **PIC:** Reika Elvaretta Putri Utomo
 * **Sub-Task Pengerjaan:**
-  - [ ] **UI/Frontend:** Implementasi tampilan daftar riwayat kontribusi CSR yang pernah diajukan/didanai oleh perusahaan beserta lencana statusnya.
-  - [ ] **Backend:** Buat endpoint daftar seluruh komitmen milik `sponsor_id` terkait beserta relasi ke `events` dan status laporannya.
-  - [ ] **Testing:** Uji navigasi dari riwayat kemitraan menuju detail event dan halaman laporan program.
+  - [x] **UI/Frontend:** Implementasi tampilan daftar riwayat kontribusi CSR yang pernah diajukan/didanai oleh perusahaan beserta lencana statusnya.
+  - [x] **Backend:** Buat endpoint daftar seluruh komitmen milik `sponsor_id` terkait beserta relasi ke `events` dan status laporannya.
+  - [x] **Testing:** Uji navigasi dari riwayat kemitraan menuju detail event dan halaman laporan program.
 
 #### 17. `[x]` SCRUM-18 *(Proposal: SCRUM-17)*: Melihat Dashboard Sponsor
 * **Kebutuhan & Use Case:** `FR-SPO-08` | `UC-15`

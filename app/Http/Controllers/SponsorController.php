@@ -30,6 +30,39 @@ class SponsorController extends Controller
             ],
         ]);
     }
+
+    /** FR-SPO-07 / UC-15: Riwayat Kemitraan Sponsorship CSR */
+    public function riwayat(Request $request)
+    {
+        $status = $request->query('status');
+
+        $query = Commitment::where('sponsor_id', $this->me()->id)
+            ->with(['event' => fn ($q) => $q->withFunding(), 'event.organizer', 'event.category', 'event.reports'])
+            ->latest();
+
+        if ($status && in_array($status, ['Menunggu Tanggapan', 'Diterima', 'Negosiasi', 'Ditolak'], true)) {
+            $query->where('status', $status);
+        }
+
+        $allCommitments = Commitment::where('sponsor_id', $this->me()->id)
+            ->with(['event.organizer'])
+            ->get();
+
+        $commitments = $query->paginate(10)->withQueryString();
+
+        $stats = [
+            'total' => $allCommitments->count(),
+            'diterima' => $allCommitments->where('status', 'Diterima')->count(),
+            'dana' => $allCommitments->where('status', 'Diterima')->sum('nominal'),
+            'organizer' => $allCommitments->where('status', 'Diterima')->pluck('event.organizer_id')->unique()->count(),
+        ];
+
+        return view('sponsor.riwayat', [
+            'commitments' => $commitments,
+            'stats' => $stats,
+            'currentStatus' => $status,
+        ]);
+    }
     public function profil() { return view('sponsor.profil', ['user' => Auth::user(), 'p' => $this->me()]); }
 
     // public function profil() { return view('sponsor.profil', ['user' => auth()->user(), 'p' => $this->me()]); }

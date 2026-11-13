@@ -13,7 +13,10 @@
   <x-stat label="Komitmen Diajukan" :value="$stats['total']"/><x-stat label="Diterima" :value="$stats['diterima']"/>
   <x-stat label="Masih Berjalan" :value="$stats['berjalan']"/><x-stat label="Total Dana Diterima" :value="'Rp '.number_format($stats['dana'],0,',','.')"/></div>
 
-<h2 class="mb-3 mt-8 text-lg font-semibold">Riwayat Kemitraan</h2>
+<div class="mb-3 mt-8 flex items-center justify-between">
+  <h2 class="text-lg font-semibold">Komitmen & Kemitraan Terbaru</h2>
+  <a href="{{ route('sponsor.riwayat') }}" class="text-xs font-semibold text-brand hover:underline">Lihat Seluruh Riwayat →</a>
+</div>
 <div class="space-y-3">
 @forelse($commitments as $c)
   <div class="card" x-data="{re:false}">
