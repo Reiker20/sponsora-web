@@ -138,15 +138,18 @@ class SponsorController extends Controller
     public function laporanShow(Event $event)
     {
         abort_unless($event->commitments()->where('sponsor_id', $this->me()->id)->where('status', 'Diterima')->exists(), 403);
-        $event->load('organizer');
-        $keuangan = $event->report('keuangan')?->load('items');
+        $event->load(['organizer', 'commitments' => fn ($q) => $q->where('status', 'Diterima')]);
+        $keuangan = $event->report('keuangan')?->load(['items.reviews' => fn ($q) => $q->where('sponsor_id', $this->me()->id)]);
         $hasil = $event->report('hasil_program');
         $reviews = ReportReview::where('sponsor_id', $this->me()->id)
             ->whereIn('report_id', array_filter([$keuangan?->id, $hasil?->id]))->get()->keyBy('report_id');
 
         return view('sponsor.laporan_show', [
-            'event' => $event, 'keuangan' => $keuangan?->isSent() ? $keuangan : null,
-            'hasil' => $hasil?->isSent() ? $hasil : null, 'reviews' => $reviews,
+            'event' => $event,
+            'keuangan' => $keuangan?->isSent() ? $keuangan : null,
+            'hasil' => $hasil?->isSent() ? $hasil : null,
+            'reviews' => $reviews,
+            'myCommitment' => $event->commitments->firstWhere('sponsor_id', $this->me()->id),
         ]);
     }
 
@@ -162,6 +165,27 @@ class SponsorController extends Controller
             'catatan' => 'required_if:status,Perlu Revisi|nullable|string|max:1000',
         ], ['catatan.required_if' => 'Catatan wajib diisi saat meminta revisi.']);
 
+        // Simpan penilaian verifikasi per item (khusus Laporan Keuangan)
+        if ($report->jenis === 'keuangan' && $request->has('items_review')) {
+            $itemsReview = $request->input('items_review', []);
+            foreach ($itemsReview as $itemId => $itemData) {
+                if ($report->items()->where('id', $itemId)->exists()) {
+                    \App\Models\ReportItemReview::updateOrCreate(
+                        [
+                            'report_item_id' => $itemId,
+                            'sponsor_id' => $this->me()->id,
+                        ],
+                        [
+                            'status' => in_array($itemData['status'] ?? '', ['Valid', 'Perlu Revisi', 'Kurang Bukti'], true)
+                                ? $itemData['status']
+                                : 'Valid',
+                            'catatan' => $itemData['catatan'] ?? null,
+                        ]
+                    );
+                }
+            }
+        }
+
         ReportReview::updateOrCreate(
             ['report_id' => $report->id, 'sponsor_id' => $this->me()->id],
             $data + ['tanggal_tanggapan' => now()]
@@ -172,6 +196,6 @@ class SponsorController extends Controller
         Notifikasi::kirim($event->organizer->user_id,
             $this->me()->nama_perusahaan.' menanggapi '.$label." \"{$event->judul}\": {$data['status']}.", route('organizer.laporan.show', $event));
 
-        return back()->with('success', 'Tanggapan tersimpan.');
+        return back()->with('success', 'Tanggapan dan verifikasi laporan tersimpan.');
     }
 }

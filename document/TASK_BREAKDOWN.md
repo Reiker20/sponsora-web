@@ -76,10 +76,10 @@ Setiap anggota tim bertanggung jawab atas **6 User Story** (masing-masing terdir
 | **SCRUM-24** | SCRUM-23 | Melihat Dashboard Admin | Admin | Ahfiya Z. | `[x]` Done |
 | **SCRUM-25** | SCRUM-24 | Memantau Seluruh Aktivitas Platform | Admin | Agus Permana | `[ ]` To Do |
 | **SCRUM-26** | SCRUM-25 | Menerima Notifikasi Status | Semua Peran | Abdulloh Al Wahabi | `[ ]` To Do |
-| **SCRUM-68** | SCRUM-26 | Laporan Keuangan | Organizer | Ilham Hilmi | `[ ]` To Do |
-| **SCRUM-69** | SCRUM-27 | Laporan Hasil Program | Organizer | Abdulloh Al Wahabi | `[ ]` To Do |
-| **SCRUM-70** | SCRUM-28 | Melihat Laporan Program | Sponsor | Ahfiya Z. | `[ ]` To Do |
-| **SCRUM-71** | SCRUM-29 | Menanggapi Laporan | Sponsor | Agus Permana | `[ ]` To Do |
+| **SCRUM-68** | SCRUM-26 | Laporan Keuangan | Organizer | Ilham Hilmi | `[x]` Done |
+| **SCRUM-69** | SCRUM-27 | Laporan Hasil Program | Organizer | Abdulloh Al Wahabi | `[x]` Done |
+| **SCRUM-70** | SCRUM-28 | Melihat Laporan Program | Sponsor | Ahfiya Z. | `[x]` Done |
+| **SCRUM-71** | SCRUM-29 | Menanggapi Laporan | Sponsor | Agus Permana | `[x]` Done |
 | **SCRUM-72** | SCRUM-30 | Memantau Kepatuhan Pelaporan | Admin | Reika Elvaretta | `[ ]` To Do |
 
 ---
@@ -300,37 +300,37 @@ Setiap anggota tim bertanggung jawab atas **6 User Story** (masing-masing terdir
 
 ### SPRINT 4 — Modul Pelaporan Pertanggungjawaban (`16 SP`)
 
-#### 26. `[ ]` SCRUM-68 *(Proposal: SCRUM-26)*: Menyusun Laporan Keuangan
+#### 26. `[x]` SCRUM-68 *(Proposal: SCRUM-26)*: Menyusun Laporan Keuangan
 * **Kebutuhan & Use Case:** `FR-ORG-10` | `UC-21`
 * **PIC:** Ilham Hilmi Widianto
 * **Sub-Task Pengerjaan:**
-  - [ ] **UI/Frontend:** Implementasi halaman *Workspace* `Laporan Keuangan` (dropdown pemilih event berstatus `Selesai`, kartu tenggat laporan, tabel dinamis input `Pos Pengeluaran` + `Nominal Aktual` + unggah `Berkas Bukti`, kalkulasi otomatis `Total Pengeluaran` & `Sisa Dana`, tombol `Simpan Draft` & `Kirim ke Sponsor`, serta panel kanan `Status Pelaporan`).
-  - [ ] **Backend:** Buat controller penyimpanan `reports` (`jenis = 'keuangan'`) dan `report_items`, validasi berkas bukti (`PDF/JPG/PNG` $\le 5\text{ MB}$), hitung sisa dana otomatis ($\text{Dana Terkumpul} - \text{Total Pengeluaran}$), ubah status laporan menjadi `'Dikirim'`, dan kirim notifikasi ke Sponsor pendana.
-  - [ ] **Testing:** Uji simpan draft, kirim laporan keuangan ke Sponsor, serta uji penolakan berkas bukti yang melebihi $5\text{ MB}$.
+  - [x] **UI/Frontend:** Implementasi halaman *Workspace* `Laporan Keuangan` (dropdown pemilih event berstatus `Selesai`, kartu tenggat laporan, tabel dinamis input `Pos Pengeluaran` + `Nominal Aktual` + unggah `Berkas Bukti`, kalkulasi otomatis `Total Pengeluaran` & `Sisa Dana`, tombol `Simpan Draft` & `Kirim ke Sponsor`, serta panel kanan `Status Pelaporan`).
+  - [x] **Backend:** Buat controller penyimpanan `reports` (`jenis = 'keuangan'`) dan `report_items`, validasi berkas bukti (`PDF/JPG/PNG` $\le 5\text{ MB}$), hitung sisa dana otomatis ($\text{Dana Terkumpul} - \text{Total Pengeluaran}$), ubah status laporan menjadi `'Dikirim'`, dan kirim notifikasi ke Sponsor pendana.
+  - [x] **Testing:** Uji simpan draft, kirim laporan keuangan ke Sponsor, serta uji penolakan berkas bukti yang melebihi $5\text{ MB}$.
 
-#### 27. `[ ]` SCRUM-69 *(Proposal: SCRUM-27)*: Melaporkan Hasil Program
+#### 27. `[x]` SCRUM-69 *(Proposal: SCRUM-27)*: Melaporkan Hasil Program
 * **Kebutuhan & Use Case:** `FR-ORG-11` | `UC-22`
 * **PIC:** Mas Moh Abdulloh Al Wahabi
 * **Sub-Task Pengerjaan:**
-  - [ ] **UI/Frontend:** Implementasi halaman *Workspace* `Laporan Hasil Program` (dropdown pemilih event, input `Ringkasan pelaksanaan`, tabel `Capaian Program` \[Indikator, Target, Realisasi\], input `Evaluasi dan kendala`, unggahan foto dokumentasi & berkas laporan, serta panel kanan `Tinjauan Sponsor`).
-  - [ ] **Backend:** Buat controller penyimpanan `reports` (`jenis = 'hasil_program'`), dukung penyimpanan `Draft`, pengiriman ke Sponsor (`status = 'Dikirim'`), perbaikan ulang saat berstatus `'Perlu Revisi'`, dan ubah `events.status` menjadi `'Dilaporkan'` apabila kedua laporan telah dikirim.
-  - [ ] **Testing:** Uji pengiriman laporan hasil program dan alur perbaikan ketika diminta revisi oleh Sponsor.
+  - [x] **UI/Frontend:** Implementasi halaman *Workspace* `Laporan Hasil Program` (dropdown pemilih event, input `Ringkasan pelaksanaan`, tabel `Capaian Program` [Indikator, Target, Realisasi], input `Evaluasi dan kendala`, unggahan foto dokumentasi & berkas laporan, serta panel kanan `Tinjauan Sponsor`).
+  - [x] **Backend:** Buat controller penyimpanan `reports` (`jenis = 'hasil_program'`), dukung penyimpanan `Draft`, pengiriman ke Sponsor (`status = 'Dikirim'`), perbaikan ulang saat berstatus `'Perlu Revisi'`, dan ubah `events.status` menjadi `'Dilaporkan'` apabila kedua laporan telah dikirim.
+  - [x] **Testing:** Uji pengiriman laporan hasil program dan alur perbaikan ketika diminta revisi oleh Sponsor.
 
-#### 28. `[ ]` SCRUM-70 *(Proposal: SCRUM-28)*: Melihat Laporan Program (Sisi Sponsor)
+#### 28. `[x]` SCRUM-70 *(Proposal: SCRUM-28)*: Melihat Laporan Program (Sisi Sponsor)
 * **Kebutuhan & Use Case:** `FR-SPO-09` | `UC-23`
 * **PIC:** Ahfiya Zukhrotunnabila
 * **Sub-Task Pengerjaan:**
-  - [ ] **UI/Frontend:** Implementasi halaman peninjauan laporan bagi Sponsor (menampilkan rincian Laporan Keuangan beserta tautan unduh/lihat bukti pengeluaran dan Laporan Hasil Program beserta dokumentasinya).
-  - [ ] **Backend:** Buat endpoint pembacaan dan pengunduhan berkas laporan dengan proteksi akses (`NFR-SPO-04`) agar hanya dapat dibuka oleh Organizer pemilik event, Sponsor yang komitmennya berstatus `'Diterima'` pada event tersebut, dan Admin.
-  - [ ] **Testing:** Uji akses halaman laporan menggunakan akun Sponsor pendana vs akun Sponsor lain yang tidak mendanai event tersebut (pastikan ditolak `403 Forbidden`).
+  - [x] **UI/Frontend:** Implementasi halaman peninjauan laporan bagi Sponsor (menampilkan rincian Laporan Keuangan beserta tautan unduh/lihat bukti pengeluaran dan Laporan Hasil Program beserta dokumentasinya).
+  - [x] **Backend:** Buat endpoint pembacaan dan pengunduhan berkas laporan dengan proteksi akses (`NFR-SPO-04`) agar hanya dapat dibuka oleh Organizer pemilik event, Sponsor yang komitmennya berstatus `'Diterima'` pada event tersebut, dan Admin.
+  - [x] **Testing:** Uji akses halaman laporan menggunakan akun Sponsor pendana vs akun Sponsor lain yang tidak mendanai event tersebut (pastikan ditolak `403 Forbidden`).
 
-#### 29. `[ ]` SCRUM-71 *(Proposal: SCRUM-29)*: Menanggapi Laporan (Sisi Sponsor)
+#### 29. `[x]` SCRUM-71 *(Proposal: SCRUM-29)*: Menanggapi Laporan (Sisi Sponsor)
 * **Kebutuhan & Use Case:** `FR-SPO-10` | `UC-24`
 * **PIC:** Agus Permana
 * **Sub-Task Pengerjaan:**
-  - [ ] **UI/Frontend:** Tambahkan panel keputusan tanggapan pada halaman laporan di sisi Sponsor: pilihan tombol `Terima Laporan` atau `Minta Revisi` disertai textarea wajib `Catatan Revisi`.
-  - [ ] **Backend:** Simpan tanggapan ke tabel `report_reviews` (`report_id`, `sponsor_id`, `status`, `catatan`, `tanggal_tanggapan`). Jika ada yang memilih `Minta Revisi`, ubah `reports.status` menjadi `'Perlu Revisi'`; jika seluruh Sponsor pendana pada event tersebut telah menyetujui, ubah `reports.status` menjadi `'Diterima'`. Kirim notifikasi ke Organizer.
-  - [ ] **Testing:** Uji skenario penerimaan laporan dan skenario permintaan revisi beserta pengiriman ulang oleh Organizer.
+  - [x] **UI/Frontend:** Tambahkan panel keputusan tanggapan pada halaman laporan di sisi Sponsor: pilihan tombol `Terima Laporan` atau `Minta Revisi` disertai textarea wajib `Catatan Revisi`.
+  - [x] **Backend:** Simpan tanggapan ke tabel `report_reviews` (`report_id`, `sponsor_id`, `status`, `catatan`, `tanggal_tanggapan`). Jika ada yang memilih `Minta Revisi`, ubah `reports.status` menjadi `'Perlu Revisi'`; jika seluruh Sponsor pendana pada event tersebut telah menyetujui, ubah `reports.status` menjadi `'Diterima'`. Kirim notifikasi ke Organizer.
+  - [x] **Testing:** Uji skenario penerimaan laporan dan skenario permintaan revisi beserta pengiriman ulang oleh Organizer.
 
 #### 30. `[ ]` SCRUM-72 *(Proposal: SCRUM-30)*: Memantau Kepatuhan Pelaporan (Sisi Admin)
 * **Kebutuhan & Use Case:** `FR-ADM-08` | `UC-25`
