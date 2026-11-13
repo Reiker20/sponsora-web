@@ -64,7 +64,6 @@ class SponsorController extends Controller
         ]);
     }
     public function profil() { return view('sponsor.profil', ['user' => Auth::user(), 'p' => $this->me()]); }
-
     // public function profil() { return view('sponsor.profil', ['user' => auth()->user(), 'p' => $this->me()]); }
 
     public function updateProfil(Request $request)
