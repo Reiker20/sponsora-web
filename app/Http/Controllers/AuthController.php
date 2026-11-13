@@ -20,14 +20,41 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate([
-            'role' => 'required|in:sponsor,organizer',
+            'role' => 'nullable|in:sponsor,organizer,admin',
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        if (Auth::attempt(['email' => $data['email'], 'password' => $data['password'], 'role' => $data['role']], $request->boolean('remember'))) {
+        $credentials = ['email' => $data['email'], 'password' => $data['password']];
+        if (! empty($data['role'])) {
+            $credentials['role'] = $data['role'];
+        }
+
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended(route('home'));
+
+            $intended = session()->pull('url.intended');
+            $dashboard = Auth::user()->dashboardUrl();
+
+            $target = ($intended && ! in_array($intended, [route('home'), route('login'), url('/')], true))
+                ? $intended
+                : $dashboard;
+
+            return redirect()->to($target);
+        }
+
+        // Fallback jika Admin login lewat form umum
+        if (Auth::attempt(['email' => $data['email'], 'password' => $data['password'], 'role' => 'admin'], $request->boolean('remember'))) {
+            $request->session()->regenerate();
+
+            $intended = session()->pull('url.intended');
+            $dashboard = route('admin.dashboard');
+
+            $target = ($intended && ! in_array($intended, [route('home'), route('admin.login'), route('login'), url('/')], true))
+                ? $intended
+                : $dashboard;
+
+            return redirect()->to($target);
         }
 
         return back()->withInput($request->only('email', 'role'))
@@ -40,7 +67,15 @@ class AuthController extends Controller
 
         if (Auth::attempt($data + ['role' => 'admin'], $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->route('admin.dashboard');
+
+            $intended = session()->pull('url.intended');
+            $dashboard = route('admin.dashboard');
+
+            $target = ($intended && ! in_array($intended, [route('home'), route('admin.login'), route('login'), url('/')], true))
+                ? $intended
+                : $dashboard;
+
+            return redirect()->to($target);
         }
 
         return back()->withInput($request->only('email'))->withErrors(['email' => 'Kredensial Admin tidak valid.']);

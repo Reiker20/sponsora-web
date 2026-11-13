@@ -1,5 +1,5 @@
 @auth
-@php $u = auth()->user(); $dash = $u->isAdmin() ? route('admin.dashboard') : route($u->role.'.dashboard'); @endphp
+@php $u = auth()->user(); $dash = $u->dashboardUrl(); @endphp
 <div class="relative" x-data="{o:false}" @click.outside="o=false">
   <button type="button" @click="o=!o" class="flex items-center gap-2 rounded-full bg-white py-1 pl-1 pr-3 shadow-sm hover:bg-brand-50">
     <span class="grid h-8 w-8 place-items-center rounded-full bg-lime/60 text-sm font-bold text-brand">{{ strtoupper(substr($u->displayName(), 0, 1)) }}</span>

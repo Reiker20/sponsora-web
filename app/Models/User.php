@@ -42,4 +42,14 @@ class User extends Authenticatable
     {
         return $this->profile()?->nama_organisasi ?? $this->profile()?->nama_perusahaan ?? $this->name;
     }
+
+    public function dashboardUrl(): string
+    {
+        return match ($this->role) {
+            'admin' => route('admin.dashboard'),
+            'organizer' => route('organizer.dashboard'),
+            'sponsor' => route('sponsor.dashboard'),
+            default => route('home'),
+        };
+    }
 }
