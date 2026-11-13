@@ -30,6 +30,7 @@ class User extends Authenticatable
     public function organizerProfile() { return $this->hasOne(OrganizerProfile::class); }
     public function sponsorProfile()   { return $this->hasOne(SponsorProfile::class); }
     public function notifikasi()       { return $this->hasMany(Notifikasi::class)->latest(); }
+    // public function notifikasi()       { return $this->hasMany(Notifikasi::class)->latest(); }
 
     public function isAdmin(): bool     { return $this->role === 'admin'; }
     public function isOrganizer(): bool { return $this->role === 'organizer'; }

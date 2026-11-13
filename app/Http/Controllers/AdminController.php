@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Commitment;
 use App\Models\Event;
 use App\Models\EventVerification;
-
 use App\Models\Notifikasi;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -23,7 +22,7 @@ class AdminController extends Controller
             return [
                 $m->translatedFormat('M') => $accepted
                     ->filter(fn ($c) => $c->updated_at->isSameMonth($m))
-                    ->sum('nominal')
+                    ->sum('nominal'),
             ];
         });
 
@@ -80,7 +79,6 @@ class AdminController extends Controller
             'catatan.required_if' => 'Catatan wajib diisi saat menolak akun.',
         ]);
 
-        // Ambil catatan dengan aman jika form tidak mengirimkannya.
         $catatan = $data['catatan'] ?? null;
 
         $user->update([
@@ -89,12 +87,7 @@ class AdminController extends Controller
         ]);
 
         $pesan = "Verifikasi akun Anda: {$data['status']}";
-
-        if ($catatan) {
-            $pesan .= " — {$catatan}";
-        } else {
-            $pesan .= '.';
-        }
+        $pesan .= $catatan ? " — {$catatan}" : '.';
 
         Notifikasi::kirim($user->id, $pesan);
 
@@ -105,12 +98,17 @@ class AdminController extends Controller
     }
 
     // ---------- Verifikasi proposal & publikasi katalog ----------
-    
     public function proposals(Request $request)
     {
         $status = $request->input('status', 'Menunggu Verifikasi');
+
         $events = Event::with(['organizer', 'category'])
-            ->when($status !== 'Semua', fn ($q) => $q->where('status', $status))->latest()->get();
+            ->when(
+                $status !== 'Semua',
+                fn ($q) => $q->where('status', $status)
+            )
+            ->latest()
+            ->get();
 
         return view('admin.proposal', compact('events', 'status'));
     }
@@ -125,27 +123,37 @@ class AdminController extends Controller
     public function proposalVerifikasi(Request $request, Event $event)
     {
         abort_unless($event->status === 'Menunggu Verifikasi', 403);
+
         $data = $request->validate([
             'status' => 'required|in:Disetujui,Ditolak',
-            'catatan' => 'required_if:status,Ditolak|nullable|string|max:1000',
-        ], ['catatan.required_if' => 'Catatan perbaikan wajib diisi saat menolak.']);
+            'catatan' => 'nullable|required_if:status,Ditolak|string|max:1000',
+        ], [
+            'catatan.required_if' => 'Catatan perbaikan wajib diisi saat menolak.',
+        ]);
+
+        $catatan = $data['catatan'] ?? null;
 
         EventVerification::create([
-            'event_id' => $event->id, 'admin_id' => $request->user()->id,
-            'status' => $data['status'], 'catatan' => $data['catatan'] ?? null, 'tanggal_verifikasi' => now(),
+            'event_id' => $event->id,
+            'admin_id' => $request->user()->id,
+            'status' => $data['status'],
+            'catatan' => $catatan,
+            'tanggal_verifikasi' => now(),
         ]);
 
         if ($data['status'] === 'Disetujui') {
-            // Publikasi otomatis ke katalog (UC-19)
+            // Publikasi otomatis ke katalog
             $event->update(['status' => 'Terverifikasi']);
             $msg = "Proposal \"{$event->judul}\" disetujui dan tayang di katalog.";
         } else {
             $event->update(['status' => 'Perlu Revisi']);
-            $msg = "Proposal \"{$event->judul}\" perlu revisi: {$data['catatan']}";
+            $msg = "Proposal \"{$event->judul}\" perlu revisi: {$catatan}";
         }
+
         Notifikasi::kirim($event->organizer->user_id, $msg, route('organizer.proposals'));
 
-        return redirect()->route('admin.proposal')->with('success', 'Hasil verifikasi tersimpan dan Organizer diberi tahu.');
+        return redirect()->route('admin.proposal')
+            ->with('success', 'Hasil verifikasi tersimpan dan Organizer diberi tahu.');
     }
 
     // ---------- Monitoring ----------
@@ -212,7 +220,7 @@ class AdminController extends Controller
                     'keuangan' => $k?->status ?? 'Belum dibuat',
                     'hasil' => $h?->status ?? 'Belum dibuat',
                     'lengkap' => $lengkap,
-                    'terlambat' => !$lengkap
+                    'terlambat' => ! $lengkap
                         && $e->batas_laporan
                         && $e->batas_laporan->isPast(),
                 ];
@@ -236,13 +244,4 @@ class AdminController extends Controller
             'filter' => $request->filter,
         ]);
     }
-    private function cekAdmin()
-    {
-        abort_unless(
-            auth()->check() && auth()->user()->role === 'admin',
-            403,
-            'Akses ditolak.'
-        );
-    }
 }
-
