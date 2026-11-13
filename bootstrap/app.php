@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
+
+        $middleware->redirectTo(
+            guests: '/masuk',
+            users: fn ($request) => $request->user()?->dashboardUrl() ?? route('home'),
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
