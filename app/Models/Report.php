@@ -16,6 +16,29 @@ class Report extends Model
     public function isEditable(): bool { return in_array($this->status, ['Draft', 'Perlu Revisi'], true); }
     public function isSent(): bool     { return $this->status !== 'Draft'; }
 
+    public function totalPengeluaran(): int
+    {
+        return (int) ($this->items ? $this->items->sum('nominal') : $this->items()->sum('nominal'));
+    }
+
+    public function sisaDana(): int
+    {
+        $danaMasuk = (int) ($this->event?->dana_terkumpul ?? 0);
+        return $danaMasuk - $this->totalPengeluaran();
+    }
+
+    public function statusSisaDana(): string
+    {
+        $sisa = $this->sisaDana();
+        if ($sisa > 0) {
+            return 'Surplus';
+        }
+        if ($sisa < 0) {
+            return 'Defisit';
+        }
+        return 'Seimbang';
+    }
+
     /** Status laporan mengikuti tanggapan seluruh sponsor yang mendanai event. */
     public function refreshStatusFromReviews(): void
     {

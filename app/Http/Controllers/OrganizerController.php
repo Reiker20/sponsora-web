@@ -451,8 +451,10 @@ class OrganizerController extends Controller
             'Laporan dibuka setelah event berstatus Selesai.'
         );
 
+        $event->load(['category', 'organizer', 'commitments' => fn ($q) => $q->where('status', 'Diterima')]);
+
         $keuangan = $event->report('keuangan')
-            ?->load('items', 'reviews.sponsor');
+            ?->load('items.reviews.sponsor', 'reviews.sponsor');
 
         $hasil = $event->report('hasil_program');
         $hasil?->load('reviews.sponsor');
@@ -559,6 +561,7 @@ class OrganizerController extends Controller
             'items.*.nominal' => 'required|integer|min:0',
             'items.*.bukti' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'items.*.bukti_lama' => 'nullable|string',
+            'items.*.id' => 'nullable|integer',
         ], [
             'items.*.bukti.max' => 'Berkas bukti maksimal 5 MB.',
             'items.*.bukti.mimes' => 'Bukti harus PDF, JPG, atau PNG.',
