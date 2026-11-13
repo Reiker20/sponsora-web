@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="id"><head>@include('partials.head')</head>
-<body class="font-sans text-gray-800 antialiased">
+<body class="flex min-h-screen flex-col font-sans text-gray-800 antialiased">
 <header class="sticky top-0 z-40 border-b border-brand/5 bg-cream/90 backdrop-blur" x-data="{m:false}">
-  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+  <div class="flex h-16 items-center justify-between px-4 sm:px-8 lg:px-12 2xl:px-16">
     <a href="{{ route('home') }}">@include('partials.logo')</a>
     <nav class="hidden items-center gap-8 text-sm font-medium lg:flex">
       <a href="{{ route('home') }}" class="hover:text-brand">Beranda</a>
@@ -30,16 +30,15 @@
     @guest<a class="block rounded-lg px-3 py-2 hover:bg-brand-50" href="{{ route('login') }}">Masuk</a>@endguest
   </nav>
 </header>
-<div class="px-4 sm:px-6">@include('partials.flash')</div>
-<main>@yield('content')</main>
-{{-- FOOTER --}}
+<div class="px-4 sm:px-8 lg:px-12 2xl:px-16">@include('partials.flash')</div>
+<main class="flex-1">@yield('content')</main>
 <footer class="mt-20 bg-cream" id="tentang">
-  <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.2fr_2fr]">
+  <div class="grid gap-10 px-4 py-12 sm:px-8 lg:px-12 2xl:px-16 md:grid-cols-[1.2fr_2fr]">
     <div>
       @include('partials.logo')
       <p class="mt-4 max-w-xs text-sm text-gray-700">Ruang bertemunya aksi sosial dan dukungan perusahaan untuk dampak yang lebih luas.</p>
-      <div class="mt-5 flex gap-5">
-        @foreach(['facebook', 'youtube', 'instagram'] as $s)
+      <div class="mt-5 flex gap-2">
+        @foreach(['facebook', 'youtube', 'x', 'instagram'] as $s)
           <a href="#" aria-label="{{ ucfirst($s) }}" class="grid h-9 w-9 place-items-center rounded-full bg-lime/40 text-brand transition hover:bg-lime"><x-icon :name="$s" class="h-4 w-4"/></a>
         @endforeach
       </div>
@@ -51,9 +50,9 @@
     </div>
   </div>
   <div class="bg-brand">
-    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 text-[11px] font-medium text-white sm:px-6">
-      <span class="text-left">© {{ date('Y') }} Sponsora, Kolaborasi untuk kebaikan</span>
-      <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" class="shrink-0 text-right hover:underline">Scroll to Top ^</a>
+    <div class="flex items-center justify-between gap-4 px-4 py-3 text-[11px] font-medium text-white sm:px-8 lg:px-12 2xl:px-16">
+      <span>© {{ date('Y') }} Sponsora, Kolaborasi untuk kebaikan</span>
+      <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">Scroll to Top ^</a>
     </div>
   </div>
 </footer>

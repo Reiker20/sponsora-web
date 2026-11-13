@@ -4,7 +4,7 @@
 @php $u = auth()->user(); @endphp
 {{-- HERO --}}
 <section class="relative overflow-hidden">
-  <div class="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:py-20">
+  <div class="grid items-center gap-10 px-4 py-12 sm:px-8 lg:px-12 2xl:px-16 lg:grid-cols-2 lg:py-20">
     <div>
       <span class="inline-block rounded-full bg-lime/40 px-3 py-1 text-xs font-semibold text-brand">Menghubungkan kebaikan dengan dukungan nyata</span>
       <h1 class="mt-5 text-4xl font-bold leading-tight text-brand sm:text-5xl">Satu Ruang Untuk <span class="underline decoration-lime decoration-8 underline-offset-[-2px]">Dampak Nyata</span></h1>
@@ -32,7 +32,7 @@
 
 {{-- STATISTIK --}}
 <section class="border-y border-gray-100 bg-white">
-  <div class="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-8 text-center sm:px-6 md:grid-cols-4">
+  <div class="grid grid-cols-2 gap-6 px-4 py-8 text-center sm:px-8 lg:px-12 2xl:px-16 md:grid-cols-4">
     <div><p class="text-2xl font-bold text-brand">{{ $stats['event'] }}+</p><p class="text-xs text-gray-500">Event terverifikasi</p></div>
     <div><p class="text-2xl font-bold text-brand">{{ $stats['mitra'] }}</p><p class="text-xs text-gray-500">Mitra perusahaan</p></div>
     <div><p class="text-2xl font-bold text-brand">@rp($stats['dana'])</p><p class="text-xs text-gray-500">Komitmen tercatat</p></div>
@@ -41,7 +41,7 @@
 </section>
 
 {{-- KATALOG --}}
-<section class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+<section class="px-4 py-16 sm:px-8 lg:px-12 2xl:px-16">
   <p class="text-sm font-semibold uppercase tracking-wide text-brand/70">Pilihan untukmu</p>
   <div class="flex flex-wrap items-end justify-between gap-3"><h2 class="mt-1 text-3xl font-bold text-brand sm:text-4xl">Aksi baik yang<br>menanti dukungan</h2>
     <a href="{{ route('events.index') }}" class="text-sm font-semibold text-brand hover:underline">Lihat Semua Event →</a></div>
@@ -59,7 +59,7 @@
 
 {{-- CARA KERJA --}}
 <section id="cara-kerja" class="bg-brand py-16 text-white" x-data="{tab:'sponsor'}">
-  <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2">
+  <div class="grid gap-10 px-4 sm:px-8 lg:px-12 2xl:px-16 lg:grid-cols-2">
     <div>
       <p class="font-semibold text-lime">Cara kerja Sponsora</p>
       <h2 class="mt-2 text-4xl font-semibold leading-tight">Kolaborasi lebih dekat, proses lebih sederhana</h2>
@@ -92,7 +92,7 @@ $fitur = [
   ['folder',   'Dokumen Terstruktur',    'Pembayaran, laporan, dan bukti pelaksanaan tersimpan dalam satu alur.'],
 ];
 @endphp
-<section id="fitur" class="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6">
+<section id="fitur" class="px-4 py-16 text-center sm:px-8 lg:px-12 2xl:px-16">
   <p class="text-sm font-semibold text-lime-700">Semua dalam satu platform</p>
   <h2 class="mt-2 text-3xl font-bold leading-tight text-brand sm:text-5xl">Dirancang untuk Kemitraan<br>yang tepercaya</h2>
   <p class="mx-auto mt-4 max-w-lg text-sm text-gray-500">Tak lagi tercecer di email, WhatsApp, dan spreadsheet. Sponsora membuat setiap langkah lebih jelas.</p>
@@ -108,7 +108,7 @@ $fitur = [
 </section>
 
 {{-- CSR --}}
-<section class="mx-auto mt-4 max-w-7xl px-4 sm:px-6">
+<section class="mt-4 px-4 sm:px-8 lg:px-12 2xl:px-16">
   <div class="grid overflow-hidden rounded-[2rem] bg-[#eaf2d9] lg:grid-cols-[1.1fr_1fr]">
     <div class="p-8 sm:p-12">
       <p class="text-sm font-semibold text-lime-700">Sesuai tujuan, tepat sasaran</p>
@@ -129,7 +129,7 @@ $fitur = [
 
 {{-- CTA --}}
 @guest
-<section class="mx-auto mt-16 max-w-7xl px-4 sm:px-6">
+<section class="mt-16 px-4 sm:px-8 lg:px-12 2xl:px-16">
   <div class="relative overflow-hidden rounded-[2rem] bg-[#cfe45a] p-10 text-center sm:p-14">
     <x-burst class="pointer-events-none absolute -left-24 -top-16 h-52 w-52 text-white/[.33] sm:-left-[143px] sm:-top-[87px] sm:h-[316px] sm:w-[316px]"/>
     <x-burst class="pointer-events-none absolute -bottom-24 -right-8 h-52 w-52 text-white/[.33] sm:-bottom-[147px] sm:-right-[44px] sm:h-[316px] sm:w-[316px]"/>
