@@ -60,6 +60,7 @@ Route::middleware(['auth', 'role:organizer'])->prefix('organizer')->name('organi
 // ---------- Sponsor ----------
 Route::middleware(['auth', 'role:sponsor'])->prefix('sponsor')->name('sponsor.')->group(function () {
     Route::get('/dashboard', [SponsorController::class, 'dashboard'])->name('dashboard');
+    Route::get('/riwayat', [SponsorController::class, 'riwayat'])->name('riwayat');
     Route::get('/profil', [SponsorController::class, 'profil'])->name('profil');
     Route::put('/profil', [SponsorController::class, 'updateProfil'])->name('profil.update');
 
