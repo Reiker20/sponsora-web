@@ -77,18 +77,27 @@
 
       $oldItems = old('items');
       if (is_array($oldItems) && count($oldItems) > 0) {
-          $initialRows = array_map(function ($item) {
+          $initialRows = array_map(function ($item) use ($keuangan) {
+              $itemId = !empty($item['id']) ? (int) $item['id'] : null;
+              $existingItem = $itemId && $keuangan ? $keuangan->items->firstWhere('id', $itemId) : null;
+              $reviews = $existingItem ? $existingItem->reviews->map(fn ($r) => [
+                  'sponsor_nama' => $r->sponsor?->nama_perusahaan ?? 'Sponsor',
+                  'status' => $r->status,
+                  'catatan' => $r->catatan,
+              ])->values()->all() : [];
+
               return [
                   'uraian' => $item['uraian'] ?? '',
                   'nominal' => $item['nominal'] ?? '',
                   'bukti_lama' => $item['bukti_lama'] ?? null,
-                  'id' => $item['id'] ?? null,
+                  'id' => $itemId,
+                  'reviews' => $reviews,
               ];
           }, array_values($oldItems));
       } elseif ($rows->isNotEmpty()) {
           $initialRows = $rows->toArray();
       } else {
-          $initialRows = [['uraian' => '', 'nominal' => '', 'bukti_lama' => null, 'id' => null]];
+          $initialRows = [['uraian' => '', 'nominal' => '', 'bukti_lama' => null, 'id' => null, 'reviews' => []]];
       }
     @endphp
 
@@ -97,12 +106,15 @@
       danaMasuk: {{ $danaTerkumpul }},
       rows: {{ json_encode($initialRows) }},
       tambahBaris() {
-        this.rows.push({ uraian: '', nominal: '', bukti_lama: null, id: null });
+        this.rows.push({ uraian: '', nominal: '', bukti_lama: null, id: null, reviews: [] });
       },
       hapusBaris(idx) {
         if (this.rows.length > 1) {
           this.rows.splice(idx, 1);
         }
+      },
+      hasActionableReview(row) {
+        return Array.isArray(row.reviews) && row.reviews.some(r => r.status === 'Perlu Revisi' || r.status === 'Kurang Bukti');
       },
       totalPengeluaran() {
         return this.rows.reduce((acc, row) => acc + (parseInt(row.nominal) || 0), 0);
@@ -158,8 +170,45 @@
             </div>
 
             <div class="p-4 space-y-3">
-              <template x-for="(row, idx) in rows" :key="idx">
-                <div class="rounded-xl border border-gray-200 bg-white p-3 shadow-sm space-y-3">
+              <template x-for="(row, idx) in rows" :key="row.id ? 'item-' + row.id : 'row-' + idx">
+                <div class="rounded-xl border p-3.5 shadow-sm space-y-3 transition"
+                     :class="hasActionableReview(row) ? 'border-amber-300 bg-amber-50/20 ring-1 ring-amber-200' : 'border-gray-200 bg-white'">
+                  
+                  {{-- Evaluasi Sponsor per Item (Jika Ada Catatan Review) --}}
+                  <template x-if="row.reviews && row.reviews.length > 0">
+                    <div class="space-y-1.5 pb-2.5 border-b border-gray-100">
+                      <div class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tanggapan Sponsor pada Pos Ini:</div>
+                      <template x-for="(rev, rIdx) in row.reviews" :key="rIdx">
+                        <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-xs"
+                             :class="{
+                               'bg-rose-50 text-rose-800 border border-rose-200': rev.status === 'Perlu Revisi',
+                               'bg-amber-50 text-amber-800 border border-amber-200': rev.status === 'Kurang Bukti',
+                               'bg-emerald-50 text-emerald-800 border border-emerald-200': rev.status === 'Valid'
+                             }">
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-bold text-gray-800" x-text="rev.sponsor_nama + ':'"></span>
+                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
+                                  :class="{
+                                    'bg-rose-200/70 text-rose-900': rev.status === 'Perlu Revisi',
+                                    'bg-amber-200/70 text-amber-900': rev.status === 'Kurang Bukti',
+                                    'bg-emerald-200/70 text-emerald-900': rev.status === 'Valid'
+                                  }"
+                                  x-text="rev.status === 'Valid' ? '✅ Valid' : (rev.status === 'Kurang Bukti' ? '⚠️ Kurang Bukti' : '❌ Perlu Revisi')">
+                            </span>
+                            <template x-if="rev.catatan">
+                              <span class="italic text-gray-700 font-medium ml-1" x-text="'“' + rev.catatan + '”'"></span>
+                            </template>
+                          </div>
+                          <template x-if="rev.status !== 'Valid'">
+                            <span class="text-[10px] font-semibold text-amber-700 bg-amber-100/70 rounded px-1.5 py-0.5">
+                              Perlu Diperbaiki
+                            </span>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+
                   <div class="grid gap-3 sm:grid-cols-12 items-start">
                     {{-- Pos Pengeluaran --}}
                     <div class="sm:col-span-5">
@@ -179,7 +228,12 @@
 
                     {{-- Unggah Bukti Nota / Foto --}}
                     <div class="sm:col-span-3">
-                      <label class="label">Bukti Foto / Nota *</label>
+                      <label class="label">
+                        Bukti Foto / Nota *
+                        <template x-if="hasActionableReview(row)">
+                          <span class="text-[11px] font-normal text-amber-600 block">(Unggah nota baru jika diminta revisi)</span>
+                        </template>
+                      </label>
                       <input type="file" :name="'items[' + idx + '][bukti]'" accept="image/jpeg,image/png,application/pdf"
                              class="input !p-1.5 text-xs">
                       <template x-if="row.bukti_lama && row.id">
@@ -238,6 +292,7 @@
                   <th class="th">Pos / Uraian Pengeluaran</th>
                   <th class="th text-right">Nominal</th>
                   <th class="th text-center">Bukti Nota / Kwitansi</th>
+                  <th class="th">Evaluasi Sponsor per Item</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
@@ -254,6 +309,29 @@
                         </button>
                       @else
                         <span class="text-xs text-gray-400">Tidak ada berkas</span>
+                      @endif
+                    </td>
+                    <td class="td">
+                      @if($item->reviews->isNotEmpty())
+                        <div class="space-y-1">
+                          @foreach($item->reviews as $rev)
+                            <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                              <span class="font-semibold text-gray-700">{{ $rev->sponsor?->nama_perusahaan }}:</span>
+                              @if($rev->status === 'Valid')
+                                <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">✅ Valid</span>
+                              @elseif($rev->status === 'Kurang Bukti')
+                                <span class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">⚠️ Kurang Bukti</span>
+                              @else
+                                <span class="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-800">❌ Perlu Revisi</span>
+                              @endif
+                              @if($rev->catatan)
+                                <span class="text-[11px] text-gray-600 italic">"{{ $rev->catatan }}"</span>
+                              @endif
+                            </div>
+                          @endforeach
+                        </div>
+                      @else
+                        <span class="text-xs text-gray-400 italic">Belum ada evaluasi</span>
                       @endif
                     </td>
                   </tr>

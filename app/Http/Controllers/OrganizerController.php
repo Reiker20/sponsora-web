@@ -461,10 +461,15 @@ class OrganizerController extends Controller
 
         $rows = ($keuangan?->items ?? collect())
             ->map(fn ($i) => [
+                'id' => $i->id,
                 'uraian' => $i->uraian,
                 'nominal' => $i->nominal,
                 'bukti_lama' => $i->bukti_berkas,
-                'id' => $i->id,
+                'reviews' => $i->reviews->map(fn ($r) => [
+                    'sponsor_nama' => $r->sponsor?->nama_perusahaan ?? 'Sponsor',
+                    'status' => $r->status,
+                    'catatan' => $r->catatan,
+                ])->values()->all(),
             ])
             ->values();
 
@@ -590,40 +595,54 @@ class OrganizerController extends Controller
             $report,
             $rows
         ) {
-            $old = $report->items()
-                ->pluck('bukti_berkas')
-                ->filter()
-                ->all();
+            $existingItems = $report->items()->get()->keyBy('id');
+            $oldFiles = $existingItems->pluck('bukti_berkas')->filter()->all();
 
-            $report->items()->delete();
-
-            $keep = [];
+            $keptItemIds = [];
+            $keepFiles = [];
 
             foreach ($rows as $i => $row) {
-                $path = $request->hasFile("items.$i.bukti")
-                    ? $request->file("items.$i.bukti")->store('bukti')
-                    : (
-                        in_array(
-                            $row['bukti_lama'] ?? null,
-                            $old,
-                            true
-                        )
-                            ? $row['bukti_lama']
-                            : null
-                    );
+                $itemId = ! empty($row['id']) ? (int) $row['id'] : null;
+                $existingItem = $itemId ? $existingItems->get($itemId) : null;
 
-                if ($path) {
-                    $keep[] = $path;
+                $path = null;
+                if ($request->hasFile("items.$i.bukti")) {
+                    $path = $request->file("items.$i.bukti")->store('bukti');
+                } elseif ($existingItem && ! empty($row['bukti_lama']) && $row['bukti_lama'] === $existingItem->bukti_berkas) {
+                    $path = $existingItem->bukti_berkas;
+                } elseif (! empty($row['bukti_lama']) && in_array($row['bukti_lama'], $oldFiles, true)) {
+                    $path = $row['bukti_lama'];
                 }
 
-                $report->items()->create([
-                    'uraian' => $row['uraian'],
-                    'nominal' => $row['nominal'],
-                    'bukti_berkas' => $path,
-                ]);
+                if ($path) {
+                    $keepFiles[] = $path;
+                }
+
+                if ($existingItem) {
+                    $existingItem->update([
+                        'uraian' => $row['uraian'],
+                        'nominal' => $row['nominal'],
+                        'bukti_berkas' => $path,
+                    ]);
+                    $keptItemIds[] = $existingItem->id;
+                } else {
+                    $newItem = $report->items()->create([
+                        'uraian' => $row['uraian'],
+                        'nominal' => $row['nominal'],
+                        'bukti_berkas' => $path,
+                    ]);
+                    $keptItemIds[] = $newItem->id;
+                }
             }
 
-            Storage::delete(array_diff($old, $keep));
+            // Hapus item lama yang di-remove oleh organizer
+            $itemsToDelete = $existingItems->whereNotIn('id', $keptItemIds);
+            foreach ($itemsToDelete as $delItem) {
+                $delItem->delete();
+            }
+
+            // Hapus berkas fisik yang tidak terpakai lagi
+            Storage::delete(array_diff($oldFiles, $keepFiles));
         });
 
         if ($kirim) {
