@@ -48,7 +48,8 @@ Route::middleware(['auth', 'role:organizer'])->prefix('organizer')->name('organi
     Route::post('/proposal/{event}/selesai', [OrganizerController::class, 'selesai'])->name('proposals.selesai');
 
     Route::get('/komitmen', [OrganizerController::class, 'komitmen'])->name('komitmen');
-    Route::post('/komitmen/{commitment}/keputusan', [OrganizerController::class, 'keputusan'])->name('komitmen.keputusan');
+    // Route::post('/komitmen/{commitment}/keputusan', [OrganizerController::class, 'keputusan'])->name('komitmen.keputusan');
+    Route::post('/komitmen/{commitment}/terima', [OrganizerController::class, 'terima'])->name('komitmen.terima');
     Route::get('/riwayat', [OrganizerController::class, 'riwayat'])->name('riwayat');
 
     Route::get('/laporan', [OrganizerController::class, 'laporanIndex'])->name('laporan.index');
@@ -65,7 +66,7 @@ Route::middleware(['auth', 'role:sponsor'])->prefix('sponsor')->name('sponsor.')
     Route::put('/profil', [SponsorController::class, 'updateProfil'])->name('profil.update');
 
     Route::post('/event/{event}/komitmen', [SponsorController::class, 'storeCommitment'])->name('komitmen.store');
-    Route::post('/komitmen/{commitment}/ajukan-ulang', [SponsorController::class, 'resubmit'])->name('komitmen.resubmit');
+    // Route::post('/komitmen/{commitment}/ajukan-ulang', [SponsorController::class, 'resubmit'])->name('komitmen.resubmit');
 
     Route::get('/laporan', [SponsorController::class, 'laporanIndex'])->name('laporan.index');
     Route::get('/laporan/{event}', [SponsorController::class, 'laporanShow'])->name('laporan.show');

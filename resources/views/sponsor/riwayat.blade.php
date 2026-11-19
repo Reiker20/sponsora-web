@@ -23,7 +23,7 @@
      class="rounded-full px-3 py-1.5 transition {{ empty($currentStatus) ? 'bg-brand text-white shadow-sm' : 'bg-white text-gray-700 hover:bg-brand-50' }}">
     Semua ({{ $stats['total'] }})
   </a>
-  @foreach(['Diterima', 'Menunggu Tanggapan', 'Negosiasi', 'Ditolak'] as $st)
+  @foreach(['Diterima', 'Menunggu Tanggapan'] as $st)
     <a href="{{ route('sponsor.riwayat', ['status' => $st]) }}"
        class="rounded-full px-3 py-1.5 transition {{ $currentStatus === $st ? 'bg-brand text-white shadow-sm' : 'bg-white text-gray-700 hover:bg-brand-50' }}">
       {{ $st }}
@@ -34,7 +34,7 @@
 {{-- Daftar Komitmen Riwayat --}}
 <div class="mt-4 space-y-3">
   @forelse($commitments as $c)
-    <div class="card transition hover:shadow-md" x-data="{ re: false }">
+    <div class="card transition hover:shadow-md">
       <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div class="min-w-0 flex-1 space-y-2">
           <div class="flex flex-wrap items-center gap-2">
@@ -88,50 +88,9 @@
                 Lihat Laporan Program
               </a>
             @endif
-
-            @if($c->status === 'Negosiasi')
-              <button type="button" @click="re = !re" class="btn btn-primary btn-sm">
-                Ajukan Ulang
-              </button>
-            @endif
           </div>
         </div>
       </div>
-
-      {{-- Form Ajukan Ulang saat Negosiasi --}}
-      @if($c->status === 'Negosiasi')
-        <div class="mt-4 border-t border-sky-100 pt-3">
-          <div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs text-sky-800">
-            <p class="font-bold">Organizer Mengajukan Negosiasi:</p>
-            <p class="mt-1">{{ $c->catatan_organizer ?: 'Organizer meminta penyesuaian nominal komitmen.' }}</p>
-            @if($c->nominal_usulan)
-              <p class="mt-1 font-semibold text-brand">Usulan Nominal dari Organizer: @rp($c->nominal_usulan)</p>
-            @endif
-          </div>
-
-          <form x-show="re" x-cloak method="POST" action="{{ route('sponsor.komitmen.resubmit', $c) }}" class="mt-3 grid gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 sm:grid-cols-3">
-            @csrf
-            <div>
-              <label class="label">Nominal Baru (Rp) *</label>
-              <input type="number" name="nominal" value="{{ $c->nominal_usulan ?: $c->nominal }}" min="50000" required class="input">
-            </div>
-            <div class="sm:col-span-2">
-              <label class="label">Catatan Tambahan untuk Organizer</label>
-              <input name="catatan" placeholder="Contoh: Kami menyetujui penyesuaian nominal sebesar..." class="input">
-            </div>
-            <div class="flex justify-end gap-2 sm:col-span-3">
-              <button type="button" @click="re = false" class="btn btn-outline btn-sm">Batal</button>
-              <button class="btn btn-primary btn-sm">Kirim Pengajuan Ulang</button>
-            </div>
-          </form>
-        </div>
-      @endif
-
-      @if($c->status === 'Ditolak' && $c->catatan_organizer)
-        <div class="mt-3 rounded-lg border border-red-200 bg-red-50 p-2 text-xs text-red-700">
-          <span class="font-bold">Alasan Penolakan dari Organizer:</span> {{ $c->catatan_organizer }}
-        </div>
-      @endif
     </div>
   @empty
     <div class="card py-12 text-center text-gray-500">
