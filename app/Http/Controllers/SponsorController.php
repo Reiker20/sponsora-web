@@ -12,7 +12,14 @@ use Illuminate\Support\Facades\Auth;
 
 class SponsorController extends Controller
 {
-    private function me() { return Auth::user()->sponsorProfile; }
+    private function me()
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return $user->sponsorProfile;
+    }
+    // private function me() { return Auth::user()->sponsorProfile; }
     // private function me() { return auth()->user()->sponsorProfile; }
 
     public function dashboard()
@@ -25,7 +32,8 @@ class SponsorController extends Controller
             'stats' => [
                 'total' => $commitments->count(),
                 'diterima' => $commitments->where('status', 'Diterima')->count(),
-                'berjalan' => $commitments->whereIn('status', ['Menunggu Tanggapan', 'Negosiasi'])->count(),
+                // 'berjalan' => $commitments->whereIn('status', ['Menunggu Tanggapan', 'Negosiasi'])->count(),
+                'berjalan' => $commitments->where('status', 'Menunggu Tanggapan')->count(),
                 'dana' => $commitments->where('status', 'Diterima')->sum('nominal'),
             ],
         ]);
@@ -40,7 +48,8 @@ class SponsorController extends Controller
             ->with(['event' => fn ($q) => $q->withFunding(), 'event.organizer', 'event.category', 'event.reports'])
             ->latest();
 
-        if ($status && in_array($status, ['Menunggu Tanggapan', 'Diterima', 'Negosiasi', 'Ditolak'], true)) {
+        // if ($status && in_array($status, ['Menunggu Tanggapan', 'Diterima', 'Negosiasi', 'Ditolak'], true)) {
+        if ($status && in_array($status, ['Menunggu Tanggapan', 'Diterima'], true)) {
             $query->where('status', $status);
         }
 
@@ -94,7 +103,8 @@ class SponsorController extends Controller
         }
 
         $aktif = $event->commitments()->where('sponsor_id', $this->me()->id)
-            ->whereIn('status', ['Menunggu Tanggapan', 'Negosiasi', 'Diterima'])->exists();
+            // ->whereIn('status', ['Menunggu Tanggapan', 'Negosiasi', 'Diterima'])->exists();
+            ->whereIn('status', ['Menunggu Tanggapan', 'Diterima'])->exists();
         if ($aktif) {
             return back()->withErrors(['nominal' => 'Anda sudah memiliki komitmen aktif pada event ini.']);
         }
@@ -113,18 +123,18 @@ class SponsorController extends Controller
     }
 
     /** Sponsor mengajukan ulang setelah Organizer memilih Negosiasi */
-    public function resubmit(Request $request, Commitment $commitment)
-    {
-        abort_unless($commitment->sponsor_id === $this->me()->id && $commitment->status === 'Negosiasi', 403);
-        abort_unless($commitment->event->acceptsCommitments(), 403);
+    // public function resubmit(Request $request, Commitment $commitment)
+    // {
+    //     abort_unless($commitment->sponsor_id === $this->me()->id && $commitment->status === 'Negosiasi', 403);
+    //     abort_unless($commitment->event->acceptsCommitments(), 403);
 
-        $data = $request->validate(['nominal' => 'required|integer|min:50000', 'catatan' => 'nullable|string|max:500']);
-        $commitment->update($data + ['status' => 'Menunggu Tanggapan', 'tanggal_pengajuan' => now()]);
-        Notifikasi::kirim($commitment->event->organizer->user_id,
-            $this->me()->nama_perusahaan." mengajukan ulang komitmen pada \"{$commitment->event->judul}\".", route('organizer.komitmen'));
+    //     $data = $request->validate(['nominal' => 'required|integer|min:50000', 'catatan' => 'nullable|string|max:500']);
+    //     $commitment->update($data + ['status' => 'Menunggu Tanggapan', 'tanggal_pengajuan' => now()]);
+    //     Notifikasi::kirim($commitment->event->organizer->user_id,
+    //         $this->me()->nama_perusahaan." mengajukan ulang komitmen pada \"{$commitment->event->judul}\".", route('organizer.komitmen'));
 
-        return back()->with('success', 'Pengajuan ulang terkirim.');
-    }
+    //     return back()->with('success', 'Pengajuan ulang terkirim.');
+    // }
 
     public function laporanIndex()
     {

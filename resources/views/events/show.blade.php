@@ -37,7 +37,8 @@
         <div class="mt-5 border-t border-gray-100 pt-5">
         {{-- ===== SPONSOR: tombol Danai Event ===== --}}
         @if($u?->isSponsor())
-          @if($myCommitment && in_array($myCommitment->status, ['Menunggu Tanggapan','Negosiasi','Diterima']))
+          {{-- @if($myCommitment && in_array($myCommitment->status, ['Menunggu Tanggapan','Negosiasi','Diterima'])) --}}
+          @if($myCommitment && in_array($myCommitment->status, ['Menunggu Tanggapan','Diterima']))
             <div class="rounded-xl bg-brand-50 p-4 text-center text-sm"><p class="font-semibold text-brand">Komitmen Anda</p>
               <p class="mt-1 text-lg font-bold">@rp($myCommitment->nominal)</p><x-badge :s="$myCommitment->status"/>
               <a href="{{ route('sponsor.dashboard') }}" class="mt-3 block text-xs font-semibold text-brand underline">Lihat di dashboard</a></div>
