@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use App\Models\ReportItem;
 use App\Models\User;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Commitment;
@@ -29,6 +30,10 @@ class FileController extends Controller
             $report = Report::with('event.organizer')->findOrFail($id);
             $this->authorizeReport($u, $report);
             $path = $report->berkas_dokumentasi;
+        } elseif ($jenis === 'transfer') {
+            $payment = Payment::with('commitment.sponsor')->findOrFail($id);
+            abort_unless($u->isAdmin() || ($u->isSponsor() && $u->sponsorProfile?->id === $payment->commitment->sponsor_id), 403);
+            $path = $payment->bukti_transfer;
         } elseif ($jenis === 'pembayaran') {
             $commitment = Commitment::with(['event.organizer', 'sponsor'])->findOrFail($id);
             $ok = $u->isAdmin()

@@ -73,6 +73,9 @@ Route::middleware(['auth', 'role:sponsor'])->prefix('sponsor')->name('sponsor.')
     Route::get('/laporan', [SponsorController::class, 'laporanIndex'])->name('laporan.index');
     Route::get('/laporan/{event}', [SponsorController::class, 'laporanShow'])->name('laporan.show');
     Route::post('/laporan/{report}/tanggapi', [SponsorController::class, 'tanggapi'])->name('laporan.tanggapi');
+    // SCRUM-73: unggah bukti transfer
+    Route::get('/komitmen/{commitment}/pembayaran', [SponsorController::class, 'pembayaran'])->name('pembayaran');
+    Route::post('/komitmen/{commitment}/pembayaran', [SponsorController::class, 'kirimBukti'])->name('pembayaran.store');
 });
 
 // ---------- Admin ----------
