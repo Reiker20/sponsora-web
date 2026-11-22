@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
+/** Rekening tujuan transfer milik platform Sponsora (dikelola Admin). */
 class BankAccount extends Model
 {
     protected $fillable = ['nama_bank', 'nomor_rekening', 'atas_nama', 'catatan', 'is_active'];
@@ -19,5 +21,4 @@ class BankAccount extends Model
     {
         return "{$this->nama_bank} {$this->nomor_rekening} a.n. {$this->atas_nama}";
     }
-
 }
