@@ -6,8 +6,11 @@ use App\Models\Commitment;
 use App\Models\Event;
 use App\Models\Notifikasi;
 use App\Models\Report;
+use App\Models\BankAccount;
+use App\Models\Payment;
 use App\Models\ReportReview;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class SponsorController extends Controller
@@ -25,7 +28,8 @@ class SponsorController extends Controller
     public function dashboard()
     {
         $commitments = Commitment::where('sponsor_id', $this->me()->id)
-            ->with(['event' => fn ($q) => $q->withFunding(), 'event.organizer'])->latest()->get();
+            ->with(['event' => fn ($q) => $q->withFunding(), 'event.organizer', 'latestPayment'])->latest()->get();
+            // ->with(['event' => fn ($q) => $q->withFunding(), 'event.organizer'])->latest()->get(); 
 
         return view('sponsor.dashboard', [
             'commitments' => $commitments,
@@ -122,6 +126,42 @@ class SponsorController extends Controller
         return back()->with('komitmen_sukses', $data['nominal']);
     }
 
+    /** Scrum 73: Sponsor mengunggah bukti pembayaran atas komitmen yang sudah diterima Organizer */
+    public function unggahBukti(Request $request, Commitment $commitment)
+    {
+        abort_unless($commitment->sponsor_id === $this->me()->id, 403);
+        abort_unless($commitment->status === 'Diterima', 403, 'Bukti pembayaran hanya dapat diunggah untuk komitmen yang sudah diterima Organizer.');
+        abort_if($commitment->status_pembayaran === 'Terverifikasi', 403, 'Pembayaran ini sudah diverifikasi dan tidak dapat diubah.');
+
+        $data = $request->validate([
+            'bukti' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'catatan_pembayaran' => 'nullable|string|max:300',
+        ], [
+            'bukti.required' => 'Pilih berkas bukti pembayaran terlebih dahulu.',
+            'bukti.mimes' => 'Bukti harus berformat PDF, JPG, atau PNG.',
+            'bukti.max' => 'Ukuran bukti maksimal 5 MB.',
+        ]);
+
+        if ($commitment->bukti_pembayaran) {
+            Storage::delete($commitment->bukti_pembayaran);
+        }
+
+        $commitment->update([
+            'bukti_pembayaran' => $request->file('bukti')->store('pembayaran'),
+            'catatan_pembayaran' => $data['catatan_pembayaran'] ?? null,
+            'status_pembayaran' => 'Menunggu Verifikasi',
+            'tanggal_bukti' => now(),
+        ]);
+
+        Notifikasi::kirim(
+            $commitment->event->organizer->user_id,
+            $this->me()->nama_perusahaan." mengunggah bukti pembayaran untuk \"{$commitment->event->judul}\".",
+            route('organizer.komitmen')
+        );
+
+        return back()->with('success', 'Bukti pembayaran terkirim. Menunggu verifikasi Organizer.');
+    }
+
     /** Sponsor mengajukan ulang setelah Organizer memilih Negosiasi */
     // public function resubmit(Request $request, Commitment $commitment)
     // {
@@ -206,5 +246,72 @@ class SponsorController extends Controller
             $this->me()->nama_perusahaan.' menanggapi '.$label." \"{$event->judul}\": {$data['status']}.", route('organizer.laporan.show', $event));
 
         return back()->with('success', 'Tanggapan dan verifikasi laporan tersimpan.');
+    }
+
+    // ---------- Pembayaran: unggah bukti transfer (SCRUM-73) ----------
+    private function ownCommitment(Commitment $commitment): Commitment
+    {
+        abort_unless($commitment->sponsor_id === $this->me()->id, 403);
+
+        return $commitment;
+    }
+    public function pembayaran(Commitment $commitment)
+    {
+        $this->ownCommitment($commitment)->load(['event.organizer', 'payments' => fn ($q) => $q->latest()]);
+
+        return view('sponsor.pembayaran', [
+            'commitment' => $commitment,
+            'accounts' => BankAccount::active()->orderBy('nama_bank')->get(),
+        ]);
+    }
+    public function kirimBukti(Request $request, Commitment $commitment)
+    {
+        $this->ownCommitment($commitment);
+
+        if ($commitment->status !== 'Diterima') {
+            return back()->with('error', 'Bukti transfer hanya dapat diunggah setelah komitmen diterima Organizer.');
+        }
+        if (! $commitment->canUploadProof()) {
+            return back()->with('error', 'Pembayaran untuk komitmen ini sudah diunggah dan sedang/telah diverifikasi Admin.');
+        }
+
+        $data = $request->validate([
+            'bank_account_id' => 'required|exists:bank_accounts,id',
+            'nama_pengirim' => 'required|string|max:100',
+            'nominal_transfer' => 'required|integer|min:1',
+            'tanggal_transfer' => 'required|date|before_or_equal:today',
+            'bukti_transfer' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ], [
+            'bukti_transfer.required' => 'Bukti transfer wajib diunggah.',
+            'bukti_transfer.mimes' => 'Bukti transfer harus berformat JPG, PNG, atau PDF.',
+            'bukti_transfer.max' => 'Ukuran bukti transfer maksimal 2 MB.',
+            'tanggal_transfer.before_or_equal' => 'Tanggal transfer tidak boleh di masa depan.',
+        ]);
+
+        $rekening = BankAccount::active()->find($data['bank_account_id']);
+        if (! $rekening) {
+            return back()->withErrors(['bank_account_id' => 'Rekening tujuan yang dipilih tidak aktif.'])->withInput();
+        }
+
+        $path = $request->file('bukti_transfer')->store('payments/bukti', 'local');
+
+        Payment::create([
+            'commitment_id' => $commitment->id,
+            'bank_account_id' => $rekening->id,
+            'rekening_tujuan' => $rekening->label(),
+            'nama_pengirim' => $data['nama_pengirim'],
+            'nominal_transfer' => $data['nominal_transfer'],
+            'tanggal_transfer' => $data['tanggal_transfer'],
+            'bukti_transfer' => $path,
+            'status' => 'Menunggu Verifikasi',
+        ]);
+
+        Notifikasi::kirimAdmin(
+            $this->me()->nama_perusahaan.' mengunggah bukti transfer untuk "'.$commitment->event->judul.'". Menunggu verifikasi.',
+            route('admin.dashboard')
+        );
+
+        return redirect()->route('sponsor.pembayaran', $commitment)
+            ->with('success', 'Bukti transfer terkirim. Admin akan memverifikasi dana Anda.');
     }
 }

@@ -14,4 +14,13 @@ class Commitment extends Model
 
     public function event()   { return $this->belongsTo(Event::class); }
     public function sponsor() { return $this->belongsTo(SponsorProfile::class, 'sponsor_id'); }
+    public function payments() { return $this->hasMany(Payment::class); }
+    public function latestPayment() { return $this->hasOne(Payment::class)->latestOfMany(); }
+
+    /** Sponsor boleh mengunggah bukti bila komitmen sudah diterima dan belum ada pembayaran yang aktif. */
+    public function canUploadProof(): bool
+    {
+        return $this->status === 'Diterima'
+            && ! $this->payments()->whereIn('status', ['Menunggu Verifikasi', 'Terverifikasi'])->exists();
+    }
 }

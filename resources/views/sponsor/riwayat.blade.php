@@ -91,6 +91,7 @@
           </div>
         </div>
       </div>
+      @include('sponsor._pembayaran', ['c' => $c])
     </div>
   @empty
     <div class="card py-12 text-center text-gray-500">
