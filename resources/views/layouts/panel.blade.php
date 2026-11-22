@@ -12,7 +12,7 @@ $menus = [
  'admin' => [['Dasbor', 'admin.dashboard', 'admin.dashboard'], ['Verifikasi Akun', 'admin.akun', 'admin.akun*'],
    ['Verifikasi Proposal', 'admin.proposal', 'admin.proposal*'], ['Manajemen Kegiatan', 'admin.kegiatan', 'admin.kegiatan*'],
    ['Pemantauan Komitmen', 'admin.komitmen', 'admin.komitmen*'], ['Kepatuhan Pelaporan', 'admin.pelaporan', 'admin.pelaporan*'],
-   ['Rekening Tujuan', 'admin.rekening', 'admin.rekening*']],
+   ['Verifikasi Dana', 'admin.pembayaran', 'admin.pembayaran*'], ['Rekening Tujuan', 'admin.rekening', 'admin.rekening*']],
 ][$u->role];
 @endphp
 <body class="bg-[#f3f6f2] font-sans text-gray-800 antialiased" x-data="{side:false}">

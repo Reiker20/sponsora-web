@@ -67,6 +67,7 @@
           <p class="font-semibold">@rp($p->nominal_transfer) <x-badge :s="$p->status"/></p>
           <p class="text-xs text-gray-500">{{ $p->tanggal_transfer->format('d M Y') }} · pengirim {{ $p->nama_pengirim }} · ke {{ $p->rekening_tujuan }}</p>
           <a href="{{ $p->buktiUrl() }}" target="_blank" class="mt-1 inline-block text-xs font-semibold text-brand underline">Lihat bukti transfer</a>
+                  @if($p->status === 'Ditolak' && $p->catatan_admin)<p class="mt-2 rounded-lg bg-red-50 p-2 text-xs text-red-700">Catatan Admin: {{ $p->catatan_admin }}. Silakan transfer/unggah ulang bukti yang benar.</p>@endif
         </div>
       </div>
     </div>

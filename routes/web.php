@@ -91,13 +91,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/komitmen', [AdminController::class, 'komitmen'])->name('komitmen');
     Route::get('/pelaporan', [AdminController::class, 'pelaporan'])->name('pelaporan');
 
-    
     // SCRUM-81: rekening tujuan transfer
     Route::get('/rekening', [AdminController::class, 'rekening'])->name('rekening');
     Route::post('/rekening', [AdminController::class, 'rekeningStore'])->name('rekening.store');
     Route::put('/rekening/{rekening}', [AdminController::class, 'rekeningUpdate'])->name('rekening.update');
     Route::post('/rekening/{rekening}/status', [AdminController::class, 'rekeningToggle'])->name('rekening.toggle');
     Route::delete('/rekening/{rekening}', [AdminController::class, 'rekeningDestroy'])->name('rekening.destroy');
+
+    // SCRUM-74: verifikasi dana masuk
+    Route::get('/pembayaran', [AdminController::class, 'pembayaran'])->name('pembayaran');
+    Route::post('/pembayaran/{payment}', [AdminController::class, 'pembayaranVerifikasi'])->name('pembayaran.verifikasi');
 });
 
 

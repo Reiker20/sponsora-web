@@ -8,6 +8,7 @@ use App\Models\EventVerification;
 use App\Models\Notifikasi;
 use App\Models\User;
 use App\Models\BankAccount;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -296,5 +297,61 @@ class AdminController extends Controller
         $rekening->delete();
 
         return back()->with('success', 'Rekening dihapus.');
+    }
+
+
+    // ---------- Verifikasi dana masuk dari Sponsor (SCRUM-74) ----------
+    public function pembayaran(Request $request)
+    {
+        $status = $request->input('status', 'Menunggu Verifikasi');
+
+        $payments = Payment::with(['commitment.sponsor', 'commitment.event.organizer', 'verifier'])
+            ->when($status !== 'Semua', fn ($q) => $q->where('status', $status))
+            ->latest()
+            ->get();
+
+        return view('admin.pembayaran', [
+            'payments' => $payments,
+            'status' => $status,
+            'stats' => [
+                'menunggu' => Payment::where('status', 'Menunggu Verifikasi')->count(),
+                'terverifikasi' => Payment::where('status', 'Terverifikasi')->sum('nominal_transfer'),
+                'ditolak' => Payment::where('status', 'Ditolak')->count(),
+            ],
+        ]);
+    }
+    public function pembayaranVerifikasi(Request $request, Payment $payment)
+    {
+        abort_unless($payment->isPending(), 403, 'Pembayaran ini sudah diverifikasi.');
+
+        $data = $request->validate([
+            'status' => 'required|in:Disetujui,Ditolak',
+            'catatan' => 'nullable|required_if:status,Ditolak|string|max:500',
+        ], [
+            'catatan.required_if' => 'Catatan wajib diisi saat menolak bukti transfer.',
+        ]);
+
+        $disetujui = $data['status'] === 'Disetujui';
+
+        $payment->update([
+            'status' => $disetujui ? 'Terverifikasi' : 'Ditolak',
+            'catatan_admin' => $data['catatan'] ?? null,
+            'verified_by' => $request->user()->id,
+            'tanggal_verifikasi' => now(),
+        ]);
+
+        $c = $payment->commitment()->with(['event.organizer', 'sponsor'])->first();
+        $judul = $c->event->judul;
+
+        if ($disetujui) {
+            Notifikasi::kirim($c->sponsor->user_id,
+                "Dana Anda untuk \"{$judul}\" telah diverifikasi Admin.", route('sponsor.pembayaran', $c));
+            Notifikasi::kirim($c->event->organizer->user_id,
+                "Dana dari {$c->sponsor->nama_perusahaan} untuk \"{$judul}\" telah diverifikasi Admin.", route('organizer.komitmen'));
+        } else {
+            Notifikasi::kirim($c->sponsor->user_id,
+                "Bukti transfer untuk \"{$judul}\" ditolak: {$data['catatan']}. Silakan unggah ulang.", route('sponsor.pembayaran', $c));
+        }
+        return back()->with('success', $disetujui ? 'Dana diverifikasi.' : 'Bukti transfer ditolak, Sponsor diberi tahu.');
     }
 }
