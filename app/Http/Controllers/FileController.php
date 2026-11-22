@@ -7,6 +7,7 @@ use App\Models\ReportItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Commitment;
 
 /** Berkas privat (legalitas, bukti, dokumentasi) hanya bisa dibuka oleh pengguna yang berhak (NTR-08). */
 class FileController extends Controller
@@ -28,6 +29,13 @@ class FileController extends Controller
             $report = Report::with('event.organizer')->findOrFail($id);
             $this->authorizeReport($u, $report);
             $path = $report->berkas_dokumentasi;
+        } elseif ($jenis === 'pembayaran') {
+            $commitment = Commitment::with(['event.organizer', 'sponsor'])->findOrFail($id);
+            $ok = $u->isAdmin()
+                || ($u->isOrganizer() && $commitment->event->organizer->user_id === $u->id)
+                || ($u->isSponsor() && $commitment->sponsor->user_id === $u->id);
+            abort_unless($ok, 403);
+            $path = $commitment->bukti_pembayaran;
         }
 
         // abort_unless($path && Storage::disk('local')->exists($path), 404);

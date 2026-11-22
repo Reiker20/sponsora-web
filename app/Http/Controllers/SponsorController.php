@@ -8,6 +8,7 @@ use App\Models\Notifikasi;
 use App\Models\Report;
 use App\Models\ReportReview;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class SponsorController extends Controller
@@ -120,6 +121,42 @@ class SponsorController extends Controller
             $this->me()->nama_perusahaan." mengajukan komitmen pada \"{$event->judul}\".", route('organizer.komitmen'));
 
         return back()->with('komitmen_sukses', $data['nominal']);
+    }
+
+    /** Scrum 73: Sponsor mengunggah bukti pembayaran atas komitmen yang sudah diterima Organizer */
+    public function unggahBukti(Request $request, Commitment $commitment)
+    {
+        abort_unless($commitment->sponsor_id === $this->me()->id, 403);
+        abort_unless($commitment->status === 'Diterima', 403, 'Bukti pembayaran hanya dapat diunggah untuk komitmen yang sudah diterima Organizer.');
+        abort_if($commitment->status_pembayaran === 'Terverifikasi', 403, 'Pembayaran ini sudah diverifikasi dan tidak dapat diubah.');
+
+        $data = $request->validate([
+            'bukti' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'catatan_pembayaran' => 'nullable|string|max:300',
+        ], [
+            'bukti.required' => 'Pilih berkas bukti pembayaran terlebih dahulu.',
+            'bukti.mimes' => 'Bukti harus berformat PDF, JPG, atau PNG.',
+            'bukti.max' => 'Ukuran bukti maksimal 5 MB.',
+        ]);
+
+        if ($commitment->bukti_pembayaran) {
+            Storage::delete($commitment->bukti_pembayaran);
+        }
+
+        $commitment->update([
+            'bukti_pembayaran' => $request->file('bukti')->store('pembayaran'),
+            'catatan_pembayaran' => $data['catatan_pembayaran'] ?? null,
+            'status_pembayaran' => 'Menunggu Verifikasi',
+            'tanggal_bukti' => now(),
+        ]);
+
+        Notifikasi::kirim(
+            $commitment->event->organizer->user_id,
+            $this->me()->nama_perusahaan." mengunggah bukti pembayaran untuk \"{$commitment->event->judul}\".",
+            route('organizer.komitmen')
+        );
+
+        return back()->with('success', 'Bukti pembayaran terkirim. Menunggu verifikasi Organizer.');
     }
 
     /** Sponsor mengajukan ulang setelah Organizer memilih Negosiasi */

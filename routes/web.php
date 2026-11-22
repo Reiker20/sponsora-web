@@ -68,6 +68,8 @@ Route::middleware(['auth', 'role:sponsor'])->prefix('sponsor')->name('sponsor.')
     Route::post('/event/{event}/komitmen', [SponsorController::class, 'storeCommitment'])->name('komitmen.store');
     // Route::post('/komitmen/{commitment}/ajukan-ulang', [SponsorController::class, 'resubmit'])->name('komitmen.resubmit');
 
+    Route::post('/komitmen/{commitment}/bukti-pembayaran', [SponsorController::class, 'unggahBukti'])->name('komitmen.bukti');
+
     Route::get('/laporan', [SponsorController::class, 'laporanIndex'])->name('laporan.index');
     Route::get('/laporan/{event}', [SponsorController::class, 'laporanShow'])->name('laporan.show');
     Route::post('/laporan/{report}/tanggapi', [SponsorController::class, 'tanggapi'])->name('laporan.tanggapi');
@@ -85,4 +87,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/kegiatan/{event}', [AdminController::class, 'kegiatanDestroy'])->name('kegiatan.destroy');
     Route::get('/komitmen', [AdminController::class, 'komitmen'])->name('komitmen');
     Route::get('/pelaporan', [AdminController::class, 'pelaporan'])->name('pelaporan');
+
+    
+    // SCRUM-81: rekening tujuan transfer
+    Route::get('/rekening', [AdminController::class, 'rekening'])->name('rekening');
+    Route::post('/rekening', [AdminController::class, 'rekeningStore'])->name('rekening.store');
+    Route::put('/rekening/{rekening}', [AdminController::class, 'rekeningUpdate'])->name('rekening.update');
+    Route::post('/rekening/{rekening}/status', [AdminController::class, 'rekeningToggle'])->name('rekening.toggle');
+    Route::delete('/rekening/{rekening}', [AdminController::class, 'rekeningDestroy'])->name('rekening.destroy');
 });
+
+

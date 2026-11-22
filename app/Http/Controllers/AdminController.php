@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\EventVerification;
 use App\Models\Notifikasi;
 use App\Models\User;
+use App\Models\BankAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -243,5 +244,57 @@ class AdminController extends Controller
             'rows' => $rows->values(),
             'filter' => $request->filter,
         ]);
+    }
+
+    // ---------- Rekening tujuan transfer (SCRUM-81) ----------
+    private function rekeningRules(): array
+    {
+        return [
+            'nama_bank' => 'required|string|max:50',
+            'nomor_rekening' => ['required', 'string', 'max:30', 'regex:/^[0-9\- ]{5,30}$/'],
+            'atas_nama' => 'required|string|max:100',
+            'catatan' => 'nullable|string|max:255',
+        ];
+    }
+
+    public function rekening()
+    {
+        return view('admin.rekening', [
+            'accounts' => BankAccount::orderByDesc('is_active')->latest()->get(),
+        ]);
+    }
+
+    public function rekeningStore(Request $request)
+    {
+        $data = $request->validate($this->rekeningRules(), [
+            'nomor_rekening.regex' => 'Nomor rekening hanya boleh berisi angka, spasi, atau tanda hubung.',
+        ]);
+
+        BankAccount::create($data + ['is_active' => $request->boolean('is_active')]);
+
+        return back()->with('success', 'Rekening tujuan ditambahkan.');
+    }
+
+    public function rekeningUpdate(Request $request, BankAccount $rekening)
+    {
+        $rekening->update($request->validate($this->rekeningRules(), [
+            'nomor_rekening.regex' => 'Nomor rekening hanya boleh berisi angka, spasi, atau tanda hubung.',
+        ]));
+
+        return back()->with('success', 'Rekening tujuan diperbarui.');
+    }
+
+    public function rekeningToggle(BankAccount $rekening)
+    {
+        $rekening->update(['is_active' => ! $rekening->is_active]);
+
+        return back()->with('success', $rekening->is_active ? 'Rekening diaktifkan.' : 'Rekening dinonaktifkan.');
+    }
+
+    public function rekeningDestroy(BankAccount $rekening)
+    {
+        $rekening->delete();
+
+        return back()->with('success', 'Rekening dihapus.');
     }
 }
