@@ -189,6 +189,40 @@
         {{-- Panel Keputusan Akhir Sponsor --}}
         <div class="card bg-white border border-gray-100 space-y-4">
           <h3 class="font-bold text-gray-800 text-sm">Keputusan Keseluruhan Laporan Keuangan</h3>
+
+          <div class="flex flex-wrap gap-4 text-sm font-semibold">
+            <label class="flex items-center gap-2 cursor-pointer rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-2.5 hover:bg-emerald-50">
+              <input type="radio" name="status" value="Diterima" required
+                     {{ old('status', $myReviewKeuangan?->status) === 'Diterima' ? 'checked' : '' }}
+                     class="text-brand focus:ring-brand">
+              <span class="text-emerald-800">✅ Setujui &amp; Terima Laporan Keuangan</span>
+            </label>
+
+            <label class="flex items-center gap-2 cursor-pointer rounded-xl border border-orange-200 bg-orange-50/50 px-4 py-2.5 hover:bg-orange-50">
+              <input type="radio" name="status" value="Perlu Revisi"
+                     {{ old('status', $myReviewKeuangan?->status) === 'Perlu Revisi' ? 'checked' : '' }}
+                     class="text-brand focus:ring-brand">
+              <span class="text-orange-800">⚠️ Minta Revisi Laporan</span>
+            </label>
+          </div>
+          @error('status') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+          @error('items_review.*.status') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+
+          <div>
+            <label class="label">Catatan Umum / Rekomendasi (Wajib diisi jika Minta Revisi)</label>
+            <textarea name="catatan" rows="3" class="input"
+                      placeholder="Tuliskan catatan apresiasi atau rincian hal-hal yang perlu diperbaiki panitia...">{{ old('catatan', $myReviewKeuangan?->catatan) }}</textarea>
+            @error('catatan') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button type="submit" class="btn btn-primary btn-sm">
+              Kirim Tanggapan &amp; Verifikasi →
+            </button>
+          </div>
+        </div>
+        <!-- <div class="card bg-white border border-gray-100 space-y-4">
+          <h3 class="font-bold text-gray-800 text-sm">Keputusan Keseluruhan Laporan Keuangan</h3>
           
           <div class="flex flex-wrap gap-4 text-sm font-semibold">
             <label class="flex items-center gap-2 cursor-pointer rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-2.5 hover:bg-emerald-50">
@@ -221,7 +255,7 @@
         </div>
       </form>
     @endif
-  </div>
+  </div> -->
 
   {{-- ==================== TAB 2: LAPORAN HASIL PROGRAM ==================== --}}
   <div x-show="tab === 'hasil'" class="space-y-6">
@@ -266,6 +300,31 @@
         <h3 class="font-bold text-gray-800 text-sm">Tanggapan untuk Laporan Hasil Program</h3>
         <div class="flex flex-wrap gap-4 text-sm font-semibold">
           <label class="flex items-center gap-2 cursor-pointer rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-2 hover:bg-emerald-50">
+            <input type="radio" name="status" value="Diterima" required
+                   {{ old('status', $myReviewHasil?->status) === 'Diterima' ? 'checked' : '' }} class="text-brand">
+            <span class="text-emerald-800">✅ Terima Laporan</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer rounded-xl border border-orange-200 bg-orange-50/50 px-4 py-2 hover:bg-orange-50">
+            <input type="radio" name="status" value="Perlu Revisi"
+                   {{ old('status', $myReviewHasil?->status) === 'Perlu Revisi' ? 'checked' : '' }} class="text-brand">
+            <span class="text-orange-800">⚠️ Minta Revisi</span>
+          </label>
+        </div>
+        @error('status') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+        <div>
+          <label class="label">Catatan Evaluasi (Wajib diisi jika Minta Revisi)</label>
+          <textarea name="catatan" rows="3" class="input" placeholder="Tuliskan catatan evaluasi...">{{ old('catatan', $myReviewHasil?->catatan) }}</textarea>
+          @error('catatan') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" class="btn btn-primary btn-sm">Kirim Tanggapan Hasil Program</button>
+        </div>
+      </form>
+      <!-- <form method="POST" action="{{ route('sponsor.laporan.tanggapi', $hasil) }}" class="card space-y-4">
+        @csrf
+        <h3 class="font-bold text-gray-800 text-sm">Tanggapan untuk Laporan Hasil Program</h3>
+        <div class="flex flex-wrap gap-4 text-sm font-semibold">
+          <label class="flex items-center gap-2 cursor-pointer rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-2 hover:bg-emerald-50">
             <input type="radio" name="status" value="Diterima"
                    {{ old('status', $myReviewHasil?->status) === 'Diterima' ? 'checked' : '' }} class="text-brand">
             <span class="text-emerald-800">✅ Terima Laporan</span>
@@ -285,7 +344,7 @@
         </div>
       </form>
     @endif
-  </div>
+  </div> -->
 
   {{-- Modal Pratinjau Bukti Foto / Nota --}}
   <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
