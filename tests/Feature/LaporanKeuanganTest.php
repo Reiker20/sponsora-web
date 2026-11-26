@@ -84,6 +84,24 @@ class LaporanKeuanganTest extends TestCase
         return $event;
     }
 
+    private function laporanDikirim(Event $event, string $status = 'Dikirim'): array
+    {
+        $report = Report::create([
+            'event_id' => $event->id,
+            'jenis' => 'keuangan',
+            'status' => $status,
+            'tanggal_kirim' => now(),
+        ]);
+        $item = ReportItem::create([
+            'report_id' => $report->id,
+            'uraian' => 'Konsumsi',
+            'nominal' => 2000000,
+            'bukti_berkas' => 'bukti/nota.jpg',
+        ]);
+
+        return [$report, $item];
+    }
+
     public function test_organizer_can_view_laporan_index_and_show(): void
     {
         $event = $this->createFinishedEvent();
@@ -229,6 +247,7 @@ class LaporanKeuanganTest extends TestCase
     public function test_non_funding_sponsor_cannot_view_laporan(): void
     {
         $event = $this->createFinishedEvent();
+        /** @var \App\Models\User $otherSponsorUser */
         $otherSponsorUser = User::factory()->create([
             'role' => 'sponsor',
             'status_verifikasi' => 'Terverifikasi',
@@ -388,5 +407,96 @@ class LaporanKeuanganTest extends TestCase
             'uraian' => 'Item Baru Ditambahkan',
             'nominal' => 800000,
         ]);
+    }
+
+    // ---------- SCRUM-71: Sponsor menanggapi laporan ----------
+
+    public function test_minta_revisi_wajib_menyertakan_catatan(): void
+    {
+        [$report] = $this->laporanDikirim($this->createFinishedEvent());
+
+        $this->actingAs($this->sponsorUser)
+            ->post(route('sponsor.laporan.tanggapi', $report), ['status' => 'Perlu Revisi'])
+            ->assertSessionHasErrors('catatan');
+
+        $this->assertSame('Dikirim', $report->fresh()->status);
+    }
+
+    public function test_tidak_bisa_menerima_laporan_jika_ada_item_bermasalah(): void
+    {
+        [$report, $item] = $this->laporanDikirim($this->createFinishedEvent());
+
+        $this->actingAs($this->sponsorUser)
+            ->post(route('sponsor.laporan.tanggapi', $report), [
+                'status' => 'Diterima',
+                'items_review' => [$item->id => ['status' => 'Kurang Bukti']],
+            ])
+            ->assertSessionHasErrors('status');
+
+        $this->assertDatabaseMissing('report_reviews', ['report_id' => $report->id]);
+    }
+
+    public function test_status_item_tidak_valid_ditolak(): void
+    {
+        [$report, $item] = $this->laporanDikirim($this->createFinishedEvent());
+
+        $this->actingAs($this->sponsorUser)
+            ->post(route('sponsor.laporan.tanggapi', $report), [
+                'status' => 'Perlu Revisi',
+                'catatan' => 'Cek lagi.',
+                'items_review' => [$item->id => ['status' => 'Hack']],
+            ])
+            ->assertSessionHasErrors("items_review.{$item->id}.status");
+    }
+
+    public function test_minta_revisi_mengubah_status_laporan_dan_item(): void
+    {
+        [$report, $item] = $this->laporanDikirim($this->createFinishedEvent());
+
+        $this->actingAs($this->sponsorUser)
+            ->post(route('sponsor.laporan.tanggapi', $report), [
+                'status' => 'Perlu Revisi',
+                'catatan' => 'Nota konsumsi buram.',
+                'items_review' => [$item->id => ['status' => 'Kurang Bukti', 'catatan' => 'Nota tidak terbaca']],
+            ])
+            ->assertSessionHas('success');
+
+        $this->assertSame('Perlu Revisi', $report->fresh()->status);
+        $this->assertDatabaseHas('report_item_reviews', [
+            'report_item_id' => $item->id,
+            'sponsor_id' => $this->sponsorProfile->id,
+            'status' => 'Kurang Bukti',
+        ]);
+    }
+
+    public function test_sponsor_tanpa_komitmen_tidak_bisa_menanggapi(): void
+    {
+        [$report] = $this->laporanDikirim($this->createFinishedEvent());
+
+        /** @var \App\Models\User $lain */
+        $lain = User::factory()->create([
+            'role' => 'sponsor',
+            'status_verifikasi' => 'Terverifikasi',
+        ]);
+        SponsorProfile::create([
+            'user_id' => $lain->id,
+            'nama_perusahaan' => 'PT Lain',
+            'nib' => '9999999999999',
+            'fokus_csr' => 'Pendidikan',
+            'kontak' => '0811111111',
+        ]);
+
+        $this->actingAs($lain)
+            ->post(route('sponsor.laporan.tanggapi', $report), ['status' => 'Diterima'])
+            ->assertForbidden();
+    }
+
+    public function test_laporan_draft_tidak_bisa_ditanggapi(): void
+    {
+        [$report] = $this->laporanDikirim($this->createFinishedEvent(), 'Draft');
+
+        $this->actingAs($this->sponsorUser)
+            ->post(route('sponsor.laporan.tanggapi', $report), ['status' => 'Diterima'])
+            ->assertForbidden();
     }
 }

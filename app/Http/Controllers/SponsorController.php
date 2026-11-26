@@ -9,8 +9,10 @@ use App\Models\Report;
 use App\Models\BankAccount;
 use App\Models\Payment;
 use App\Models\ReportReview;
+use App\Models\ReportItemReview;
 use App\Support\SimpleInvoicePdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
@@ -231,38 +233,50 @@ class SponsorController extends Controller
         $data = $request->validate([
             'status' => 'required|in:Diterima,Perlu Revisi',
             'catatan' => 'required_if:status,Perlu Revisi|nullable|string|max:1000',
-        ], ['catatan.required_if' => 'Catatan wajib diisi saat meminta revisi.']);
+            'items_review' => 'nullable|array',
+            'items_review.*.status' => 'required|in:Valid,Perlu Revisi,Kurang Bukti',
+            'items_review.*.catatan' => 'nullable|string|max:300',
+        ], [
+            'status.required' => 'Pilih keputusan: terima laporan atau minta revisi.',
+            'catatan.required_if' => 'Catatan wajib diisi saat meminta revisi.',
+            'items_review.*.status.in' => 'Status verifikasi item tidak valid.',
+        ]);
 
-        // Simpan penilaian verifikasi per item (khusus Laporan Keuangan)
-        if ($report->jenis === 'keuangan' && $request->has('items_review')) {
-            $itemsReview = $request->input('items_review', []);
+        $itemsReview = $report->jenis === 'keuangan' ? ($data['items_review'] ?? []) : [];
+
+        // Tidak boleh menerima laporan jika masih ada item bermasalah
+        if ($data['status'] === 'Diterima'
+            && collect($itemsReview)->contains(fn ($i) => $i['status'] !== 'Valid')) {
+            return back()->withInput()->withErrors([
+                'status' => 'Masih ada item berstatus Perlu Revisi/Kurang Bukti. Pilih "Minta Revisi" atau ubah item tersebut menjadi Valid.',
+            ]);
+        }
+
+        DB::transaction(function () use ($report, $data, $itemsReview) {
             foreach ($itemsReview as $itemId => $itemData) {
                 if ($report->items()->where('id', $itemId)->exists()) {
-                    \App\Models\ReportItemReview::updateOrCreate(
-                        [
-                            'report_item_id' => $itemId,
-                            'sponsor_id' => $this->me()->id,
-                        ],
-                        [
-                            'status' => in_array($itemData['status'] ?? '', ['Valid', 'Perlu Revisi', 'Kurang Bukti'], true)
-                                ? $itemData['status']
-                                : 'Valid',
-                            'catatan' => $itemData['catatan'] ?? null,
-                        ]
+                    ReportItemReview::updateOrCreate(
+                        ['report_item_id' => $itemId, 'sponsor_id' => $this->me()->id],
+                        ['status' => $itemData['status'], 'catatan' => $itemData['catatan'] ?? null]
                     );
                 }
             }
-        }
 
-        ReportReview::updateOrCreate(
-            ['report_id' => $report->id, 'sponsor_id' => $this->me()->id],
-            $data + ['tanggal_tanggapan' => now()]
-        );
-        $report->refreshStatusFromReviews();
+            ReportReview::updateOrCreate(
+                ['report_id' => $report->id, 'sponsor_id' => $this->me()->id],
+                [
+                    'status' => $data['status'],
+                    'catatan' => $data['catatan'] ?? null,
+                    'tanggal_tanggapan' => now(),
+                ]
+            );
+            $report->refreshStatusFromReviews();
+        });
 
         $label = $report->jenis === 'keuangan' ? 'laporan keuangan' : 'laporan hasil program';
         Notifikasi::kirim($event->organizer->user_id,
-            $this->me()->nama_perusahaan.' menanggapi '.$label." \"{$event->judul}\": {$data['status']}.", route('organizer.laporan.show', $event));
+            $this->me()->nama_perusahaan.' menanggapi '.$label." \"{$event->judul}\": {$data['status']}.",
+            route('organizer.laporan.show', $event));
 
         return back()->with('success', 'Tanggapan dan verifikasi laporan tersimpan.');
     }
