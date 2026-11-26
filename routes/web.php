@@ -84,4 +84,5 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::delete('/kegiatan/{event}', [AdminController::class, 'kegiatanDestroy'])->name('kegiatan.destroy');
     Route::get('/komitmen', [AdminController::class, 'komitmen'])->name('komitmen');
     Route::get('/pelaporan', [AdminController::class, 'pelaporan'])->name('pelaporan');
+    Route::get('/pelaporan/{event}', [AdminController::class, 'pelaporanShow'])->name('pelaporan.show');
 });
