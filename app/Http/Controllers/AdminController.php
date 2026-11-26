@@ -247,6 +247,33 @@ class AdminController extends Controller
         ]);
     }
 
+    public function pelaporanShow(Event $event)
+    {
+        abort_unless(in_array($event->status, ['Selesai', 'Dilaporkan'], true), 404);
+
+        $event->load([
+            'category',
+            'organizer.user',
+            'commitments' => fn ($q) => $q->where('status', 'Diterima')->with('sponsor.user'),
+        ]);
+
+        $keuangan = $event->report('keuangan')
+            ?->load(['items.reviews.sponsor', 'reviews.sponsor']);
+
+        $hasil = $event->report('hasil_program')
+            ?->load('reviews.sponsor');
+
+        $batasLaporan = $event->batas_laporan;
+        $isTerlambat = $batasLaporan && $batasLaporan->isPast() && (! $keuangan?->isSent() || ! $hasil?->isSent());
+
+        return view('admin.pelaporan_show', compact(
+            'event',
+            'keuangan',
+            'hasil',
+            'isTerlambat'
+        ));
+    }
+
     // ---------- Rekening tujuan transfer (SCRUM-81) ----------
     private function rekeningRules(): array
     {

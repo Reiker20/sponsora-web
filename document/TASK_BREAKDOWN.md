@@ -80,7 +80,7 @@ Setiap anggota tim bertanggung jawab atas **6 User Story** (masing-masing terdir
 | **SCRUM-69** | SCRUM-27 | Laporan Hasil Program | Organizer | Abdulloh Al Wahabi | `[x]` Done |
 | **SCRUM-70** | SCRUM-28 | Melihat Laporan Program | Sponsor | Ahfiya Z. | `[x]` Done |
 | **SCRUM-71** | SCRUM-29 | Menanggapi Laporan | Sponsor | Agus Permana | `[x]` Done |
-| **SCRUM-72** | SCRUM-30 | Memantau Kepatuhan Pelaporan | Admin | Reika Elvaretta | `[ ]` To Do |
+| **SCRUM-72** | SCRUM-30 | Memantau Kepatuhan Pelaporan | Admin | Reika Elvaretta | `[x]` Done |
 
 ---
 
@@ -332,13 +332,13 @@ Setiap anggota tim bertanggung jawab atas **6 User Story** (masing-masing terdir
   - [x] **Backend:** Simpan tanggapan ke tabel `report_reviews` (`report_id`, `sponsor_id`, `status`, `catatan`, `tanggal_tanggapan`). Jika ada yang memilih `Minta Revisi`, ubah `reports.status` menjadi `'Perlu Revisi'`; jika seluruh Sponsor pendana pada event tersebut telah menyetujui, ubah `reports.status` menjadi `'Diterima'`. Kirim notifikasi ke Organizer.
   - [x] **Testing:** Uji skenario penerimaan laporan dan skenario permintaan revisi beserta pengiriman ulang oleh Organizer.
 
-#### 30. `[ ]` SCRUM-72 *(Proposal: SCRUM-30)*: Memantau Kepatuhan Pelaporan (Sisi Admin)
+#### 30. `[x]` SCRUM-72 *(Proposal: SCRUM-30)*: Memantau Kepatuhan Pelaporan & Detail Inspeksi (Sisi Admin)
 * **Kebutuhan & Use Case:** `FR-ADM-08` | `UC-25`
 * **PIC:** Reika Elvaretta Putri Utomo
 * **Sub-Task Pengerjaan:**
-  - [ ] **UI/Frontend:** Tambahkan tab `Pelaporan` pada menu `Monitoring Platform` Admin yang menampilkan daftar event berstatus `Selesai`, `tanggal_selesai`, `batas_laporan`, status Laporan Keuangan & Hasil Program, serta filter untuk event yang **Belum Melapor** atau **Terlambat Melapor**.
-  - [ ] **Backend:** Buat metode `cekKeterlambatanLaporan()` yang membandingkan tanggal hari ini dengan `events.batas_laporan` pada event yang belum berstatus `'Dilaporkan'`.
-  - [ ] **Testing:** Uji filter event yang melewati batas waktu pelaporan pada dashboard Admin.
+  - [x] **UI/Frontend:** Tambahkan tab `Pelaporan` pada menu `Monitoring Platform` Admin yang menampilkan daftar event berstatus `Selesai`, `tanggal_selesai`, `batas_laporan`, status Laporan Keuangan & Hasil Program, filter untuk event yang **Belum Melapor** atau **Terlambat Melapor**, serta halaman detail inspeksi laporan (`admin/pelaporan_show.blade.php`) lengkap dengan verifikasi per item dan modal pratinjau bukti nota.
+  - [x] **Backend:** Buat rute dan controller `pelaporanShow()` di `AdminController`, dukung akses pembacaan berkas nota/dokumentasi untuk Admin di `FileController`, dan metode penyaringan keterlambatan batas waktu pelaporan.
+  - [x] **Testing:** Uji filter event yang melewati batas waktu pelaporan pada dashboard Admin serta pengujian akses inspeksi berkas dan otorisasi Admin di `AdminPelaporanTest.php`.
 
 ---
 
