@@ -10,7 +10,8 @@ class Event extends Model
 {
     protected $fillable = [
         'organizer_id', 'category_id', 'judul', 'deskripsi', 'lokasi', 'penerima_manfaat', 'tanggal_pelaksanaan',
-        'target_dana', 'benefit_sponsor', 'cover', 'status', 'tanggal_selesai', 'batas_laporan',
+        'target_dana', 'benefit_sponsor', 'cover', 'nama_bank', 'nomor_rekening', 'atas_nama_rekening', 'qris_image',
+        'status', 'tanggal_selesai', 'batas_laporan',
     ];
 
     protected $casts = [
@@ -30,7 +31,7 @@ class Event extends Model
     public function scopeWithFunding(Builder $q): Builder
     {
         return $q->withSum(['commitments as dana_sum' => fn ($c) => $c->where('status', 'Diterima')], 'nominal')
-                ->withCount(['commitments as mitra_count' => fn ($c) => $c->where('status', 'Diterima')]);
+                ->withCount(['commitments as mitra_count' => fn ($c) => $c->where('status', 'Diterima')->where('nominal', '>', 0)]);
     }
 
     public function getDanaTerkumpulAttribute(): int
@@ -48,7 +49,7 @@ class Event extends Model
 
     public function getMitraCountAttribute(): int
     {
-        return (int) ($this->attributes['mitra_count'] ?? $this->commitments()->where('status', 'Diterima')->count());
+        return (int) ($this->attributes['mitra_count'] ?? $this->commitments()->where('status', 'Diterima')->where('nominal', '>', 0)->count());
     }
 
     public function getProgressAttribute(): int
@@ -74,13 +75,36 @@ class Event extends Model
         return asset('storage/'.$this->cover);
     }
 
+    public function getQrisUrlAttribute(): ?string
+    {
+        if (! $this->qris_image) {
+            return null;
+        }
+
+        if (str_starts_with($this->qris_image, 'http://') || str_starts_with($this->qris_image, 'https://')) {
+            return $this->qris_image;
+        }
+
+        return asset('storage/'.$this->qris_image);
+    }
+
+    public function hasBankAccount(): bool
+    {
+        return filled($this->nama_bank) && filled($this->nomor_rekening);
+    }
+
+    public function hasPaymentMethod(): bool
+    {
+        return $this->hasBankAccount() || filled($this->qris_image);
+    }
+
     public function isEditable(): bool        { return in_array($this->status, ['Draft', 'Perlu Revisi'], true); }
     public function acceptsCommitments(): bool { return $this->status === 'Terverifikasi'; }
     public function isPublic(): bool          { return in_array($this->status, ['Terverifikasi', 'Selesai', 'Dilaporkan'], true); }
 
     public function acceptedSponsorIds()
     {
-        return $this->commitments()->where('status', 'Diterima')->pluck('sponsor_id')->unique();
+        return $this->commitments()->where('status', 'Diterima')->where('nominal', '>', 0)->pluck('sponsor_id')->unique();
     }
 
     public function report(string $jenis): ?Report

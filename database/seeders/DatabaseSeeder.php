@@ -81,6 +81,9 @@ class DatabaseSeeder extends Seeder
                 'tanggal_pelaksanaan' => now()->addDays(25),
                 'target_dana' => 50000000,
                 'benefit_sponsor' => "- Logo perusahaan pada spanduk utama, backdrop, dan seragam 300 relawan\n- Publikasi liputan media partner dan siaran pers resmi\n- Booth aktivasi program CSR di lokasi kegiatan",
+                'nama_bank' => 'BCA',
+                'nomor_rekening' => '8290123456',
+                'atas_nama_rekening' => 'Komunitas Aksi Muda',
                 'status' => 'Terverifikasi',
             ]
         );
@@ -95,6 +98,9 @@ class DatabaseSeeder extends Seeder
                 'tanggal_pelaksanaan' => now()->addDays(40),
                 'target_dana' => 30000000,
                 'benefit_sponsor' => "- Branding pojok baca atas nama perusahaan\n- Video dokumentasi CSR eksklusif untuk annual report perusahaan\n- Kesempatan karyawan ikut serta sebagai relawan pengajar (employee volunteering)",
+                'nama_bank' => 'Mandiri',
+                'nomor_rekening' => '1400098765432',
+                'atas_nama_rekening' => 'Komunitas Aksi Muda',
                 'status' => 'Terverifikasi',
             ]
         );
@@ -109,6 +115,9 @@ class DatabaseSeeder extends Seeder
                 'tanggal_pelaksanaan' => now()->addDays(15),
                 'target_dana' => 25000000,
                 'benefit_sponsor' => "- Logo di banner acara dan kartu pemeriksaan kesehatan warga\n- Ucapan terima kasih khusus dalam sambutan resmi pimpinan daerah",
+                'nama_bank' => 'BRI',
+                'nomor_rekening' => '001101234567890',
+                'atas_nama_rekening' => 'Komunitas Aksi Muda',
                 'status' => 'Terverifikasi',
             ]
         );

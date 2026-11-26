@@ -154,6 +154,9 @@ class AjukanProposalVerifikasiTest extends TestCase
             'tanggal_pelaksanaan' => now()->addDays(30)->format('Y-m-d'),
             'target_dana' => 75000000,
             'benefit_sponsor' => 'Plakat penghargaan dan ruang promosi banner panggung.',
+            'nama_bank' => 'BCA',
+            'nomor_rekening' => '1234567890',
+            'atas_nama_rekening' => 'Komunitas Peduli Alam',
             'action' => 'ajukan',
         ]);
 
@@ -178,6 +181,9 @@ class AjukanProposalVerifikasiTest extends TestCase
             'tanggal_pelaksanaan' => now()->addDays(20)->format('Y-m-d'),
             'target_dana' => 25000000,
             'benefit_sponsor' => 'Pencantuman logo pada seluruh materi digital dan seragam relawan.',
+            'nama_bank' => 'BCA',
+            'nomor_rekening' => '1234567890',
+            'atas_nama_rekening' => 'Komunitas Peduli Alam',
             'action' => 'ajukan',
         ]);
 

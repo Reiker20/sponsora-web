@@ -50,6 +50,7 @@ Route::middleware(['auth', 'role:organizer'])->prefix('organizer')->name('organi
     Route::get('/komitmen', [OrganizerController::class, 'komitmen'])->name('komitmen');
     // Route::post('/komitmen/{commitment}/keputusan', [OrganizerController::class, 'keputusan'])->name('komitmen.keputusan');
     Route::post('/komitmen/{commitment}/terima', [OrganizerController::class, 'terima'])->name('komitmen.terima');
+    Route::post('/komitmen/{commitment}/validasi', [OrganizerController::class, 'validasiDonasi'])->name('komitmen.validasi');
     Route::get('/riwayat', [OrganizerController::class, 'riwayat'])->name('riwayat');
 
     Route::get('/laporan', [OrganizerController::class, 'laporanIndex'])->name('laporan.index');
@@ -76,6 +77,11 @@ Route::middleware(['auth', 'role:sponsor'])->prefix('sponsor')->name('sponsor.')
     // SCRUM-73: unggah bukti transfer
     Route::get('/komitmen/{commitment}/pembayaran', [SponsorController::class, 'pembayaran'])->name('pembayaran');
     Route::post('/komitmen/{commitment}/pembayaran', [SponsorController::class, 'kirimBukti'])->name('pembayaran.store');
+
+    // Inbox & Invoice Sponsor
+    Route::get('/inbox', [SponsorController::class, 'inbox'])->name('inbox');
+    Route::get('/inbox/{commitment}', [SponsorController::class, 'inboxShow'])->name('inbox.show');
+    Route::get('/inbox/{commitment}/download', [SponsorController::class, 'invoiceDownload'])->name('inbox.download');
 });
 
 // ---------- Admin ----------

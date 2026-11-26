@@ -15,6 +15,26 @@
       <div><dt class="text-xs text-gray-500">Target dana</dt><dd class="font-medium">@rp($event->target_dana)</dd></div></dl>
     <h3 class="mt-5 font-semibold">Deskripsi</h3><p class="mt-1 whitespace-pre-line text-sm text-gray-600">{{ $event->deskripsi }}</p>
     <h3 class="mt-5 font-semibold">Benefit sponsor</h3><p class="mt-1 whitespace-pre-line text-sm text-gray-600">{{ $event->benefit_sponsor }}</p>
+    <h3 class="mt-5 font-semibold">Metode Penerimaan Donasi Organizer</h3>
+    <div class="mt-2 grid gap-3 sm:grid-cols-2">
+      <div class="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm">
+        <p class="text-xs text-gray-500">Rekening Bank</p>
+        @if($event->hasBankAccount())
+          <p class="mt-1 font-semibold text-brand">{{ $event->nama_bank }} — {{ $event->nomor_rekening }}</p>
+          <p class="text-xs text-gray-600">a.n. {{ $event->atas_nama_rekening }}</p>
+        @else
+          <p class="mt-1 text-xs text-gray-400">Tidak dilampirkan</p>
+        @endif
+      </div>
+      <div class="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm">
+        <p class="text-xs text-gray-500">Kode QRIS</p>
+        @if($event->qris_url)
+          <img src="{{ $event->qris_url }}" alt="QRIS Organizer" class="mt-2 h-32 w-32 rounded-lg border border-gray-200 bg-white object-contain p-1">
+        @else
+          <p class="mt-1 text-xs text-gray-400">Tidak dilampirkan</p>
+        @endif
+      </div>
+    </div>
   </div>
   <div class="space-y-6">
     <div class="card text-sm"><h3 class="font-semibold">Organizer</h3><p class="mt-2">{{ $event->organizer->nama_organisasi }} ({{ $event->organizer->jenis }})</p>

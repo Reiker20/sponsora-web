@@ -60,7 +60,7 @@ class FileController extends Controller
         $ok = $u->isAdmin()
             || ($u->isOrganizer() && $event->organizer->user_id === $u->id)
             || ($u->isSponsor() && $report->status !== 'Draft' && $u->sponsorProfile
-                && $event->commitments()->where('status', 'Diterima')->where('sponsor_id', $u->sponsorProfile->id)->exists());
+                && $event->commitments()->where('status', 'Diterima')->where('nominal', '>', 0)->where('sponsor_id', $u->sponsorProfile->id)->exists());
         abort_unless($ok, 403);
     }
 }
