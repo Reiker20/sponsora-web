@@ -37,10 +37,14 @@
         <div class="mt-5 border-t border-gray-100 pt-5">
         {{-- ===== SPONSOR: tombol Danai Event ===== --}}
         @if($u?->isSponsor())
-          @if($myCommitment && in_array($myCommitment->status, ['Menunggu Tanggapan','Negosiasi','Diterima']))
+          {{-- @if($myCommitment && in_array($myCommitment->status, ['Menunggu Tanggapan','Negosiasi','Diterima'])) --}}
+          @if($myCommitment && in_array($myCommitment->status, ['Menunggu Tanggapan','Diterima']))
             <div class="rounded-xl bg-brand-50 p-4 text-center text-sm"><p class="font-semibold text-brand">Komitmen Anda</p>
               <p class="mt-1 text-lg font-bold">@rp($myCommitment->nominal)</p><x-badge :s="$myCommitment->status"/>
-              <a href="{{ route('sponsor.dashboard') }}" class="mt-3 block text-xs font-semibold text-brand underline">Lihat di dashboard</a></div>
+              {{-- <a href="{{ route('sponsor.dashboard') }}" class="mt-3 block text-xs font-semibold text-brand underline">Lihat di dashboard</a></div> --}}
+              @if($myCommitment->status === 'Diterima')<a href="{{ route('sponsor.pembayaran', $myCommitment) }}" class="btn btn-primary btn-sm mt-3">Transfer & Unggah Bukti</a>@endif
+                <a href="{{ route('sponsor.dashboard') }}" class="mt-3 block text-xs font-semibold text-brand underline">Lihat di dashboard</a></div>
+                
           @elseif(! $event->acceptsCommitments())
             <div class="rounded-xl bg-gray-100 p-4 text-center text-sm text-gray-600">Event ini tidak lagi menerima komitmen.</div>
           @elseif(! $u->isVerified())
@@ -48,8 +52,7 @@
           @else
             <div x-data="{open: {{ $sukses ? 'true' : 'false' }}, step: {{ $sukses ? 3 : 1 }}, nominal: '', bentuk: 'Dana Tunai', setuju: false}">
               <button type="button" @click="open=true; step=1" class="btn btn-primary w-full !py-3.5 !text-base">Danai Event Ini →</button>
-              <p class="mt-3 text-center text-[11px] leading-5 text-gray-500">Dana ditransfer setelah organizer menyetujui komitmen dan instruksi pembayaran tersedia.</p>
-
+              <p class="mt-3 text-center text-[11px] leading-5 text-gray-500">Setelah organizer menyetujui, transfer dana ke rekening platform Sponsora lalu unggah bukti transfernya.</p>
               <div x-show="open" x-cloak class="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" @keydown.escape.window="open=false">
                 <div class="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl" @click.outside="open=false">
                   <div class="flex items-start justify-between"><div><p class="text-xs font-semibold uppercase text-brand/60">Pendanaan event</p><h3 class="text-xl font-bold text-brand">Tentukan Dukunganmu</h3></div>
@@ -67,7 +70,7 @@
                     <div x-show="step===2" x-cloak class="space-y-4">
                       <div class="rounded-xl border border-gray-100 p-4 text-sm"><p class="text-xs text-gray-500">Ringkasan komitmen</p>
                         <p class="mt-1 text-2xl font-bold text-brand" x-text="'Rp ' + Number(nominal||0).toLocaleString('id-ID')"></p><p class="text-gray-600" x-text="bentuk"></p></div>
-                      <div class="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Sponsora hanya mencatat komitmen. Pembayaran dilakukan di luar sistem setelah Organizer menyetujui.</div>
+                      <div class="rounded-xl bg-amber-50 p-3 text-xs text-amber-800">Dana tidak dikirim langsung ke Organizer. Setelah komitmen diterima, Anda transfer ke rekening platform Sponsora dan mengunggah bukti transfer untuk diverifikasi Admin.</div>
                       <label class="flex items-start gap-2 text-sm"><input type="checkbox" x-model="setuju" class="mt-1 rounded"> Saya memahami ketentuan di atas dan data perusahaan saya sudah benar.</label>
                       <div class="flex justify-between"><button type="button" class="btn btn-outline" @click="step=1">Kembali</button><button class="btn btn-primary" :disabled="!setuju">Kirim Pengajuan</button></div>
                     </div>

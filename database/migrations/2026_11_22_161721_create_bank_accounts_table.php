@@ -1,0 +1,26 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('bank_accounts', function (Blueprint $table) {
+            $table->id();
+            $table->string('nama_bank', 50);
+            $table->string('nomor_rekening', 30);
+            $table->string('atas_nama', 100);
+            $table->string('catatan')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('bank_accounts');
+    }
+};

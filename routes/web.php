@@ -48,7 +48,8 @@ Route::middleware(['auth', 'role:organizer'])->prefix('organizer')->name('organi
     Route::post('/proposal/{event}/selesai', [OrganizerController::class, 'selesai'])->name('proposals.selesai');
 
     Route::get('/komitmen', [OrganizerController::class, 'komitmen'])->name('komitmen');
-    Route::post('/komitmen/{commitment}/keputusan', [OrganizerController::class, 'keputusan'])->name('komitmen.keputusan');
+    // Route::post('/komitmen/{commitment}/keputusan', [OrganizerController::class, 'keputusan'])->name('komitmen.keputusan');
+    Route::post('/komitmen/{commitment}/terima', [OrganizerController::class, 'terima'])->name('komitmen.terima');
     Route::get('/riwayat', [OrganizerController::class, 'riwayat'])->name('riwayat');
 
     Route::get('/laporan', [OrganizerController::class, 'laporanIndex'])->name('laporan.index');
@@ -65,11 +66,16 @@ Route::middleware(['auth', 'role:sponsor'])->prefix('sponsor')->name('sponsor.')
     Route::put('/profil', [SponsorController::class, 'updateProfil'])->name('profil.update');
 
     Route::post('/event/{event}/komitmen', [SponsorController::class, 'storeCommitment'])->name('komitmen.store');
-    Route::post('/komitmen/{commitment}/ajukan-ulang', [SponsorController::class, 'resubmit'])->name('komitmen.resubmit');
+    // Route::post('/komitmen/{commitment}/ajukan-ulang', [SponsorController::class, 'resubmit'])->name('komitmen.resubmit');
+
+    Route::post('/komitmen/{commitment}/bukti-pembayaran', [SponsorController::class, 'unggahBukti'])->name('komitmen.bukti');
 
     Route::get('/laporan', [SponsorController::class, 'laporanIndex'])->name('laporan.index');
     Route::get('/laporan/{event}', [SponsorController::class, 'laporanShow'])->name('laporan.show');
     Route::post('/laporan/{report}/tanggapi', [SponsorController::class, 'tanggapi'])->name('laporan.tanggapi');
+    // SCRUM-73: unggah bukti transfer
+    Route::get('/komitmen/{commitment}/pembayaran', [SponsorController::class, 'pembayaran'])->name('pembayaran');
+    Route::post('/komitmen/{commitment}/pembayaran', [SponsorController::class, 'kirimBukti'])->name('pembayaran.store');
 });
 
 // ---------- Admin ----------
@@ -85,4 +91,17 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/komitmen', [AdminController::class, 'komitmen'])->name('komitmen');
     Route::get('/pelaporan', [AdminController::class, 'pelaporan'])->name('pelaporan');
     Route::get('/pelaporan/{event}', [AdminController::class, 'pelaporanShow'])->name('pelaporan.show');
+
+    // SCRUM-81: rekening tujuan transfer
+    Route::get('/rekening', [AdminController::class, 'rekening'])->name('rekening');
+    Route::post('/rekening', [AdminController::class, 'rekeningStore'])->name('rekening.store');
+    Route::put('/rekening/{rekening}', [AdminController::class, 'rekeningUpdate'])->name('rekening.update');
+    Route::post('/rekening/{rekening}/status', [AdminController::class, 'rekeningToggle'])->name('rekening.toggle');
+    Route::delete('/rekening/{rekening}', [AdminController::class, 'rekeningDestroy'])->name('rekening.destroy');
+
+    // SCRUM-74: verifikasi dana masuk
+    Route::get('/pembayaran', [AdminController::class, 'pembayaran'])->name('pembayaran');
+    Route::post('/pembayaran/{payment}', [AdminController::class, 'pembayaranVerifikasi'])->name('pembayaran.verifikasi');
 });
+
+

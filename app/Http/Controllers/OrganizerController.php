@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Commitment;
 use App\Models\Event;
 use App\Models\Notifikasi;
+use App\Models\OrganizerProfile;
 use App\Models\Report;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,11 +19,16 @@ class OrganizerController extends Controller
     {
         $user = Auth::user();
 
-        return $user->organizerProfile ?? $user->organizerProfile()->create([
-            'nama_organisasi' => $user->name,
-            'jenis' => 'HIMA/UKM',
-            'kontak' => '-',
-        ]);
+        abort_unless($user, 401);
+
+        return OrganizerProfile::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'nama_organisasi' => $user->name,
+                'jenis' => 'HIMA/UKM',
+                'kontak' => '-',
+            ]
+        );
     }
 
     private function own(Event $event): Event
@@ -382,32 +388,57 @@ class OrganizerController extends Controller
         return view('organizer.komitmen', compact('commitments'));
     }
 
-    /** UC-06 Meninjau komitmen dana */
-    public function keputusan(Request $request, Commitment $commitment)
+    // /** UC-06 Meninjau komitmen dana */
+    // public function keputusan(Request $request, Commitment $commitment)
+    // {
+    //     $this->own($commitment->event);
+    //     abort_unless($commitment->status === 'Menunggu Tanggapan', 403);
+
+    //     $data = $request->validate([
+    //         'keputusan' => 'required|in:Diterima,Ditolak,Negosiasi',
+    //         'catatan_organizer' => 'required_if:keputusan,Negosiasi|nullable|string|max:500',
+    //         'nominal_usulan' => 'nullable|integer|min:50000',
+    //     ]);
+
+    //     if ($data['keputusan'] === 'Diterima' && ! $commitment->event->acceptsCommitments()) {
+    //         return back()->with('error', 'Event tidak lagi menerima komitmen.');
+    //     }
+
+    //     $commitment->update([
+    //         'status' => $data['keputusan'],
+    //         'catatan_organizer' => $data['catatan_organizer'] ?? null,
+    //         'nominal_usulan' => $data['nominal_usulan'] ?? null,
+    //     ]);
+
+    //     Notifikasi::kirim($commitment->sponsor->user_id,
+    //         "Komitmen Anda pada \"{$commitment->event->judul}\": {$data['keputusan']}.", route('sponsor.dashboard'));
+
+    //     return back()->with('success', "Komitmen ditandai {$data['keputusan']}.");
+    // }
+
+    /** Menerima komitmen dana. Opsi Tolak dan Negosiasi sudah ditiadakan. */
+    public function terima(Commitment $commitment)
     {
         $this->own($commitment->event);
         abort_unless($commitment->status === 'Menunggu Tanggapan', 403);
 
-        $data = $request->validate([
-            'keputusan' => 'required|in:Diterima,Ditolak,Negosiasi',
-            'catatan_organizer' => 'required_if:keputusan,Negosiasi|nullable|string|max:500',
-            'nominal_usulan' => 'nullable|integer|min:50000',
-        ]);
-
-        if ($data['keputusan'] === 'Diterima' && ! $commitment->event->acceptsCommitments()) {
+        if (! $commitment->event->acceptsCommitments()) {
             return back()->with('error', 'Event tidak lagi menerima komitmen.');
         }
 
         $commitment->update([
-            'status' => $data['keputusan'],
-            'catatan_organizer' => $data['catatan_organizer'] ?? null,
-            'nominal_usulan' => $data['nominal_usulan'] ?? null,
+            'status' => 'Diterima',
+            'catatan_organizer' => null,
+            'nominal_usulan' => null,
         ]);
 
-        Notifikasi::kirim($commitment->sponsor->user_id,
-            "Komitmen Anda pada \"{$commitment->event->judul}\": {$data['keputusan']}.", route('sponsor.dashboard'));
+        Notifikasi::kirim(
+            $commitment->sponsor->user_id,
+            "Komitmen Anda pada \"{$commitment->event->judul}\" telah diterima.",
+            route('sponsor.dashboard')
+        );
 
-        return back()->with('success', "Komitmen ditandai {$data['keputusan']}.");
+        return back()->with('success', 'Komitmen diterima.');
     }
 
     public function riwayat()
@@ -461,15 +492,10 @@ class OrganizerController extends Controller
 
         $rows = ($keuangan?->items ?? collect())
             ->map(fn ($i) => [
-                'id' => $i->id,
                 'uraian' => $i->uraian,
                 'nominal' => $i->nominal,
                 'bukti_lama' => $i->bukti_berkas,
-                'reviews' => $i->reviews->map(fn ($r) => [
-                    'sponsor_nama' => $r->sponsor?->nama_perusahaan ?? 'Sponsor',
-                    'status' => $r->status,
-                    'catatan' => $r->catatan,
-                ])->values()->all(),
+                'id' => $i->id,
             ])
             ->values();
 
@@ -595,54 +621,40 @@ class OrganizerController extends Controller
             $report,
             $rows
         ) {
-            $existingItems = $report->items()->get()->keyBy('id');
-            $oldFiles = $existingItems->pluck('bukti_berkas')->filter()->all();
+            $old = $report->items()
+                ->pluck('bukti_berkas')
+                ->filter()
+                ->all();
 
-            $keptItemIds = [];
-            $keepFiles = [];
+            $report->items()->delete();
+
+            $keep = [];
 
             foreach ($rows as $i => $row) {
-                $itemId = ! empty($row['id']) ? (int) $row['id'] : null;
-                $existingItem = $itemId ? $existingItems->get($itemId) : null;
-
-                $path = null;
-                if ($request->hasFile("items.$i.bukti")) {
-                    $path = $request->file("items.$i.bukti")->store('bukti');
-                } elseif ($existingItem && ! empty($row['bukti_lama']) && $row['bukti_lama'] === $existingItem->bukti_berkas) {
-                    $path = $existingItem->bukti_berkas;
-                } elseif (! empty($row['bukti_lama']) && in_array($row['bukti_lama'], $oldFiles, true)) {
-                    $path = $row['bukti_lama'];
-                }
+                $path = $request->hasFile("items.$i.bukti")
+                    ? $request->file("items.$i.bukti")->store('bukti')
+                    : (
+                        in_array(
+                            $row['bukti_lama'] ?? null,
+                            $old,
+                            true
+                        )
+                            ? $row['bukti_lama']
+                            : null
+                    );
 
                 if ($path) {
-                    $keepFiles[] = $path;
+                    $keep[] = $path;
                 }
 
-                if ($existingItem) {
-                    $existingItem->update([
-                        'uraian' => $row['uraian'],
-                        'nominal' => $row['nominal'],
-                        'bukti_berkas' => $path,
-                    ]);
-                    $keptItemIds[] = $existingItem->id;
-                } else {
-                    $newItem = $report->items()->create([
-                        'uraian' => $row['uraian'],
-                        'nominal' => $row['nominal'],
-                        'bukti_berkas' => $path,
-                    ]);
-                    $keptItemIds[] = $newItem->id;
-                }
+                $report->items()->create([
+                    'uraian' => $row['uraian'],
+                    'nominal' => $row['nominal'],
+                    'bukti_berkas' => $path,
+                ]);
             }
 
-            // Hapus item lama yang di-remove oleh organizer
-            $itemsToDelete = $existingItems->whereNotIn('id', $keptItemIds);
-            foreach ($itemsToDelete as $delItem) {
-                $delItem->delete();
-            }
-
-            // Hapus berkas fisik yang tidak terpakai lagi
-            Storage::delete(array_diff($oldFiles, $keepFiles));
+            Storage::delete(array_diff($old, $keep));
         });
 
         if ($kirim) {

@@ -38,6 +38,14 @@ class Event extends Model
         return (int) ($this->attributes['dana_sum'] ?? $this->commitments()->where('status', 'Diterima')->sum('nominal'));
     }
 
+    /** Dana yang sudah dicek Admin (bukti transfer Terverifikasi). Berbeda dari dana_terkumpul (komitmen diterima). */
+    public function getDanaTerverifikasiAttribute(): int
+    {
+        return (int) Payment::where('status', 'Terverifikasi')
+            ->whereHas('commitment', fn ($q) => $q->where('event_id', $this->id))
+            ->sum('nominal_transfer');
+    }
+
     public function getMitraCountAttribute(): int
     {
         return (int) ($this->attributes['mitra_count'] ?? $this->commitments()->where('status', 'Diterima')->count());
