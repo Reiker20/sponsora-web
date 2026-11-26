@@ -349,6 +349,34 @@
     @php
       $isHasilEditable = ! $hasil || $hasil->isEditable();
     @endphp
+    
+    {{-- Catatan revisi dan tanggapan Sponsor untuk laporan hasil program --}}
+    @if($hasil && $hasil->reviews->isNotEmpty())
+      @if($hasil->status === 'Perlu Revisi')
+        <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          <p class="font-bold">Sponsor meminta revisi laporan hasil program:</p>
+          <ul class="mt-2 list-disc space-y-1 pl-5">
+            @foreach($hasil->reviews->where('status', 'Perlu Revisi') as $rev)
+              <li><b>{{ $rev->sponsor?->nama_perusahaan ?? 'Sponsor' }}:</b> {{ $rev->catatan }}</li>
+            @endforeach
+          </ul>
+          <p class="mt-2 text-xs">Perbaiki laporan di bawah, lalu kirim ulang ke Sponsor.</p>
+        </div>
+      @endif
+      <div class="card">
+        <h3 class="text-sm font-bold text-gray-800">Tanggapan Sponsor</h3>
+        <div class="mt-3 divide-y divide-gray-100 text-sm">
+          @foreach($hasil->reviews as $rev)
+            <div class="flex flex-wrap items-center gap-2 py-2">
+              <span class="font-semibold">{{ $rev->sponsor?->nama_perusahaan ?? 'Sponsor' }}</span>
+              <x-badge :s="$rev->status"/>
+              @if($rev->catatan)<span class="italic text-gray-600">“{{ $rev->catatan }}”</span>@endif
+              <span class="ml-auto text-xs text-gray-400">{{ $rev->tanggal_tanggapan?->format('d M Y') }}</span>
+            </div>
+          @endforeach
+        </div>
+      </div>
+    @endif
 
     @if($isHasilEditable)
       <form method="POST" action="{{ route('organizer.laporan.hasil', $event) }}" enctype="multipart/form-data" class="card space-y-4">

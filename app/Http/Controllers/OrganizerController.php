@@ -815,11 +815,25 @@ class OrganizerController extends Controller
 
         $kirim = $request->input('aksi') === 'kirim';
 
+        // $data = $request->validate([
+        //     'ringkasan' => ($kirim ? 'required' : 'nullable') . '|string|max:3000',
+        //     'capaian_hasil' => ($kirim ? 'required' : 'nullable') . '|string|max:3000',
+        //     'kendala' => 'nullable|string|max:3000',
+        //     'dokumentasi' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        // ]);
+
         $data = $request->validate([
-            'ringkasan' => ($kirim ? 'required' : 'nullable') . '|string|max:3000',
-            'capaian_hasil' => ($kirim ? 'required' : 'nullable') . '|string|max:3000',
+            'ringkasan' => ($kirim ? 'required|string|min:30' : 'nullable|string') . '|max:3000',
+            'capaian_hasil' => ($kirim ? 'required|string|min:30' : 'nullable|string') . '|max:3000',
             'kendala' => 'nullable|string|max:3000',
             'dokumentasi' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ], [
+            'ringkasan.required' => 'Ringkasan pelaksanaan wajib diisi sebelum dikirim.',
+            'ringkasan.min' => 'Ringkasan pelaksanaan minimal 30 karakter.',
+            'capaian_hasil.required' => 'Capaian hasil dan dampak wajib diisi sebelum dikirim.',
+            'capaian_hasil.min' => 'Capaian hasil dan dampak minimal 30 karakter.',
+            'dokumentasi.mimes' => 'Dokumentasi harus berformat PDF, JPG, atau PNG.',
+            'dokumentasi.max' => 'Ukuran dokumentasi maksimal 5 MB.',
         ]);
 
         $update = collect($data)
