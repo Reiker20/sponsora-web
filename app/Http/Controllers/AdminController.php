@@ -182,6 +182,9 @@ class AdminController extends Controller
         if ($event->cover) {
             Storage::disk('public')->delete($event->cover);
         }
+        if ($event->qris_image) {
+            Storage::disk('public')->delete($event->qris_image);
+        }
 
         Notifikasi::kirim(
             $event->organizer->user_id,
@@ -254,7 +257,7 @@ class AdminController extends Controller
         $event->load([
             'category',
             'organizer.user',
-            'commitments' => fn ($q) => $q->where('status', 'Diterima')->with('sponsor.user'),
+            'commitments' => fn ($q) => $q->where('status', 'Diterima')->where('nominal', '>', 0)->with('sponsor.user'),
         ]);
 
         $keuangan = $event->report('keuangan')

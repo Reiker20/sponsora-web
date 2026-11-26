@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class OrganizerController extends Controller
 {
@@ -172,12 +173,58 @@ class OrganizerController extends Controller
             'target_dana' => 'required|integer|min:100000|max:100000000000',
             'benefit_sponsor' => 'required|string|min:10',
             'cover' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'nama_bank' => 'nullable|required_with:nomor_rekening,atas_nama_rekening|string|max:60',
+            'nomor_rekening' => ['nullable', 'required_with:nama_bank,atas_nama_rekening', 'string', 'max:40', 'regex:/^[0-9\- ]{5,40}$/'],
+            'atas_nama_rekening' => 'nullable|required_with:nama_bank,nomor_rekening|string|max:100',
+            'qris_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'hapus_qris' => 'nullable|boolean',
         ];
+    }
+
+    private function preparePaymentMethodData(Request $request, array $data, ?Event $event = null): array
+    {
+        $hasBank = filled($data['nama_bank'] ?? null)
+            && filled($data['nomor_rekening'] ?? null)
+            && filled($data['atas_nama_rekening'] ?? null);
+
+        $hapusQris = $request->boolean('hapus_qris');
+        $hasQris = $request->hasFile('qris_image')
+            || ($event && filled($event->qris_image) && ! $hapusQris);
+
+        if (! $hasBank && ! $hasQris) {
+            throw ValidationException::withMessages([
+                'metode_pembayaran' => 'Minimal lengkapi salah satu metode penerimaan donasi: Rekening Bank atau unggah Foto QRIS.',
+            ]);
+        }
+
+        unset($data['hapus_qris']);
+
+        if (! $hasBank) {
+            $data['nama_bank'] = null;
+            $data['nomor_rekening'] = null;
+            $data['atas_nama_rekening'] = null;
+        }
+
+        if ($request->hasFile('qris_image')) {
+            if ($event?->qris_image) {
+                Storage::disk('public')->delete($event->qris_image);
+            }
+            $data['qris_image'] = $request->file('qris_image')->store('qris', 'public');
+        } elseif ($hapusQris && $event?->qris_image) {
+            Storage::disk('public')->delete($event->qris_image);
+            $data['qris_image'] = null;
+        }
+
+        return $data;
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate($this->rules(true));
+        $data = $request->validate($this->rules(true), [
+            'nomor_rekening.regex' => 'Nomor rekening hanya boleh berisi angka, spasi, atau tanda hubung.',
+        ]);
+
+        $data = $this->preparePaymentMethodData($request, $data);
 
         if ($request->hasFile('cover')) {
             $data['cover'] = $request
@@ -248,7 +295,11 @@ class OrganizerController extends Controller
 
         abort_unless($event->isEditable(), 403);
 
-        $data = $request->validate($this->rules(false));
+        $data = $request->validate($this->rules(false), [
+            'nomor_rekening.regex' => 'Nomor rekening hanya boleh berisi angka, spasi, atau tanda hubung.',
+        ]);
+
+        $data = $this->preparePaymentMethodData($request, $data, $event);
 
         if ($request->hasFile('cover')) {
             if ($event->cover) {
@@ -304,6 +355,9 @@ class OrganizerController extends Controller
 
         if ($event->cover) {
             Storage::disk('public')->delete($event->cover);
+        }
+        if ($event->qris_image) {
+            Storage::disk('public')->delete($event->qris_image);
         }
 
         $event->delete();
@@ -361,6 +415,7 @@ class OrganizerController extends Controller
         foreach (
             $event->commitments()
                 ->where('status', 'Diterima')
+                ->where('nominal', '>', 0)
                 ->with('sponsor')
                 ->get() as $c
         ) {
@@ -441,6 +496,59 @@ class OrganizerController extends Controller
         return back()->with('success', 'Komitmen diterima.');
     }
 
+    /** Memvalidasi bukti transfer dan menetapkan nominal aktual yang masuk ke Invoice */
+    public function validasiDonasi(Request $request, Commitment $commitment)
+    {
+        $this->own($commitment->event);
+        abort_unless(filled($commitment->bukti_pembayaran), 403, 'Bukti transfer belum diunggah.');
+        abort_if($commitment->status_pembayaran === 'Terverifikasi', 403, 'Donasi ini sudah divalidasi.');
+
+        $data = $request->validate([
+            'nominal_tervalidasi' => 'required|integer|min:0|max:100000000000',
+            'catatan_organizer' => 'nullable|string|max:500',
+        ]);
+
+        $validated = DB::transaction(function () use ($commitment, $data) {
+            $c = Commitment::whereKey($commitment->id)->lockForUpdate()->firstOrFail();
+            abort_unless(filled($c->bukti_pembayaran), 403, 'Bukti transfer belum diunggah.');
+            abort_if($c->status_pembayaran === 'Terverifikasi', 403, 'Donasi ini sudah divalidasi.');
+
+            $klaim = $c->nominal_klaim ?? $c->nominal;
+            $valid = (int) $data['nominal_tervalidasi'];
+            $invoiceNo = 'INV-SPO-' . now()->format('Ymd') . '-' . str_pad((string) $c->id, 4, '0', STR_PAD_LEFT);
+
+            $c->update([
+                'nominal_klaim' => $klaim,
+                'nominal_tervalidasi' => $valid,
+                'nominal' => $valid,
+                'status' => 'Diterima',
+                'status_pembayaran' => 'Terverifikasi',
+                'catatan_organizer' => $data['catatan_organizer'] ?? null,
+                'nominal_usulan' => null,
+                'nomor_invoice' => $invoiceNo,
+                'tanggal_validasi' => now(),
+            ]);
+
+            return [$c, $klaim, $valid, $invoiceNo];
+        });
+
+        [$c, $klaim, $valid, $invoiceNo] = $validated;
+        $validFormatted = 'Rp ' . number_format($valid, 0, ',', '.');
+        $pesan = "Invoice {$invoiceNo}: Donasi Anda untuk \"{$commitment->event->judul}\" telah divalidasi sebesar {$validFormatted}.";
+        if ($klaim !== $valid) {
+            $klaimFormatted = 'Rp ' . number_format($klaim, 0, ',', '.');
+            $pesan .= " (Disesuaikan dari klaim awal {$klaimFormatted}).";
+        }
+
+        Notifikasi::kirim(
+            $commitment->sponsor->user_id,
+            $pesan,
+            route('sponsor.inbox.show', $c)
+        );
+
+        return back()->with('success', "Donasi divalidasi sebesar {$validFormatted}. Invoice {$invoiceNo} terkirim ke Inbox Sponsor.");
+    }
+
     public function riwayat()
     {
         $items = Commitment::whereIn(
@@ -448,6 +556,7 @@ class OrganizerController extends Controller
             $this->me()->events()->pluck('id')
         )
             ->where('status', 'Diterima')
+            ->where('nominal', '>', 0)
             ->with(['sponsor', 'event'])
             ->latest()
             ->get();
@@ -482,7 +591,7 @@ class OrganizerController extends Controller
             'Laporan dibuka setelah event berstatus Selesai.'
         );
 
-        $event->load(['category', 'organizer', 'commitments' => fn ($q) => $q->where('status', 'Diterima')]);
+        $event->load(['category', 'organizer', 'commitments' => fn ($q) => $q->where('status', 'Diterima')->where('nominal', '>', 0)]);
 
         $keuangan = $event->report('keuangan')
             ?->load('items.reviews.sponsor', 'reviews.sponsor');
@@ -496,6 +605,11 @@ class OrganizerController extends Controller
                 'nominal' => $i->nominal,
                 'bukti_lama' => $i->bukti_berkas,
                 'id' => $i->id,
+                'reviews' => $i->reviews->map(fn ($r) => [
+                    'sponsor_nama' => $r->sponsor?->nama_perusahaan ?? 'Sponsor',
+                    'status' => $r->status,
+                    'catatan' => $r->catatan,
+                ])->values()->all(),
             ])
             ->values();
 
@@ -550,6 +664,7 @@ class OrganizerController extends Controller
         foreach (
             $event->commitments()
                 ->where('status', 'Diterima')
+                ->where('nominal', '>', 0)
                 ->with('sponsor')
                 ->get()
                 ->unique('sponsor_id') as $c
@@ -621,37 +736,52 @@ class OrganizerController extends Controller
             $report,
             $rows
         ) {
-            $old = $report->items()
+            $existing = $report->items()->get()->keyBy('id');
+            $old = $existing
                 ->pluck('bukti_berkas')
                 ->filter()
                 ->all();
 
-            $report->items()->delete();
-
+            $keptIds = [];
             $keep = [];
 
             foreach ($rows as $i => $row) {
-                $path = $request->hasFile("items.$i.bukti")
-                    ? $request->file("items.$i.bukti")->store('bukti')
-                    : (
-                        in_array(
-                            $row['bukti_lama'] ?? null,
-                            $old,
-                            true
-                        )
-                            ? $row['bukti_lama']
-                            : null
-                    );
+                $itemId = ! empty($row['id']) ? (int) $row['id'] : null;
+                $existingItem = $itemId ? $existing->get($itemId) : null;
+
+                if ($request->hasFile("items.$i.bukti")) {
+                    $path = $request->file("items.$i.bukti")->store('bukti');
+                } elseif (in_array($row['bukti_lama'] ?? null, $old, true)) {
+                    $path = $row['bukti_lama'];
+                } else {
+                    $path = $existingItem?->bukti_berkas;
+                }
 
                 if ($path) {
                     $keep[] = $path;
                 }
 
-                $report->items()->create([
-                    'uraian' => $row['uraian'],
-                    'nominal' => $row['nominal'],
-                    'bukti_berkas' => $path,
-                ]);
+                if ($existingItem) {
+                    $existingItem->update([
+                        'uraian' => $row['uraian'],
+                        'nominal' => $row['nominal'],
+                        'bukti_berkas' => $path,
+                    ]);
+                    $keptIds[] = $existingItem->id;
+                } else {
+                    $created = $report->items()->create([
+                        'uraian' => $row['uraian'],
+                        'nominal' => $row['nominal'],
+                        'bukti_berkas' => $path,
+                    ]);
+                    $keptIds[] = $created->id;
+                }
+            }
+
+            if ($keptIds === []) {
+                $report->items()->delete();
+            } else {
+                $report->items()->whereNotIn('id', $keptIds)->delete();
             }
 
             Storage::delete(array_diff($old, $keep));

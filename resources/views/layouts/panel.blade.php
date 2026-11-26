@@ -7,7 +7,7 @@ $menus = [
    ['Buat Proposal', 'organizer.proposals.create', 'organizer.proposals.create'], ['Komitmen Masuk', 'organizer.komitmen', 'organizer.komitmen*'],
    ['Laporan Pertanggungjawaban', 'organizer.laporan.index', 'organizer.laporan*'], ['Riwayat Kemitraan', 'organizer.riwayat', 'organizer.riwayat'],
    ['Profil', 'organizer.profil', 'organizer.profil*']],
- 'sponsor' => [['Dasbor', 'sponsor.dashboard', 'sponsor.dashboard'], ['Riwayat Kemitraan', 'sponsor.riwayat', 'sponsor.riwayat*'],
+ 'sponsor' => [['Dasbor', 'sponsor.dashboard', 'sponsor.dashboard'], ['Inbox & Invoice', 'sponsor.inbox', 'sponsor.inbox*'], ['Riwayat Kemitraan', 'sponsor.riwayat', 'sponsor.riwayat*'],
    ['Jelajahi Event', 'events.index', 'events.*'], ['Laporan Program', 'sponsor.laporan.index', 'sponsor.laporan*'], ['Profil Perusahaan', 'sponsor.profil', 'sponsor.profil*']],
  'admin' => [['Dasbor', 'admin.dashboard', 'admin.dashboard'], ['Verifikasi Akun', 'admin.akun', 'admin.akun*'],
    ['Verifikasi Proposal', 'admin.proposal', 'admin.proposal*'], ['Manajemen Kegiatan', 'admin.kegiatan', 'admin.kegiatan*'],

@@ -66,6 +66,49 @@
       <textarea name="benefit_sponsor" rows="4" required class="input" placeholder="Satu benefit per baris (mis. Logo di banner, publikasi media, booth aktivasi...)">{{ old('benefit_sponsor', $event->benefit_sponsor) }}</textarea>
       @error('benefit_sponsor') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
     </div>
+
+    <div class="rounded-2xl border border-brand/15 bg-brand-50/40 p-4 space-y-4">
+      <div>
+        <h3 class="text-sm font-bold text-brand">Metode Penerimaan Donasi / Sponsorship *</h3>
+        <p class="mt-0.5 text-xs text-gray-600">Wajib mengisi <b>minimal salah satu</b>: Rekening Bank <b>atau</b> Foto Kode QRIS (boleh mengisi keduanya sekaligus agar Sponsor mudah memilih).</p>
+        @error('metode_pembayaran')
+          <p class="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{{ $message }}</p>
+        @enderror
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-3">
+        <div>
+          <label class="label">Nama Bank</label>
+          <input name="nama_bank" value="{{ old('nama_bank', $event->nama_bank) }}" class="input" placeholder="mis. BCA / Mandiri / BRI">
+          @error('nama_bank') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="label">Nomor Rekening</label>
+          <input name="nomor_rekening" value="{{ old('nomor_rekening', $event->nomor_rekening) }}" class="input" placeholder="mis. 1234567890">
+          @error('nomor_rekening') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="label">Atas Nama Rekening</label>
+          <input name="atas_nama_rekening" value="{{ old('atas_nama_rekening', $event->atas_nama_rekening) }}" class="input" placeholder="mis. Komunitas Aksi Muda">
+          @error('atas_nama_rekening') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+        </div>
+      </div>
+
+      <div class="border-t border-brand/10 pt-3">
+        <label class="label">Foto Kode QRIS (JPG/PNG/WEBP, maks 2 MB)</label>
+        @if($event->qris_url)
+          <div class="mb-2 flex flex-wrap items-center gap-4">
+            <img src="{{ $event->qris_url }}" alt="QRIS Proposal" class="h-32 w-32 rounded-xl border border-gray-200 bg-white object-contain p-1">
+            <label class="inline-flex items-center gap-2 text-xs text-red-700">
+              <input type="checkbox" name="hapus_qris" value="1" class="rounded" @checked(old('hapus_qris'))>
+              Hapus foto QRIS saat ini
+            </label>
+          </div>
+        @endif
+        <input type="file" name="qris_image" accept="image/*" class="input !p-2 text-xs">
+        @error('qris_image') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+      </div>
+    </div>
   </div>
 
   <div class="space-y-6">

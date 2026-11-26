@@ -9,6 +9,7 @@ use App\Models\Report;
 use App\Models\BankAccount;
 use App\Models\Payment;
 use App\Models\ReportReview;
+use App\Support\SimpleInvoicePdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
@@ -35,7 +36,7 @@ class SponsorController extends Controller
             'commitments' => $commitments,
             'stats' => [
                 'total' => $commitments->count(),
-                'diterima' => $commitments->where('status', 'Diterima')->count(),
+                'diterima' => $commitments->where('status', 'Diterima')->where('nominal', '>', 0)->count(),
                 // 'berjalan' => $commitments->whereIn('status', ['Menunggu Tanggapan', 'Negosiasi'])->count(),
                 'berjalan' => $commitments->where('status', 'Menunggu Tanggapan')->count(),
                 'dana' => $commitments->where('status', 'Diterima')->sum('nominal'),
@@ -65,9 +66,9 @@ class SponsorController extends Controller
 
         $stats = [
             'total' => $allCommitments->count(),
-            'diterima' => $allCommitments->where('status', 'Diterima')->count(),
+            'diterima' => $allCommitments->where('status', 'Diterima')->where('nominal', '>', 0)->count(),
             'dana' => $allCommitments->where('status', 'Diterima')->sum('nominal'),
-            'organizer' => $allCommitments->where('status', 'Diterima')->pluck('event.organizer_id')->unique()->count(),
+            'organizer' => $allCommitments->where('status', 'Diterima')->where('nominal', '>', 0)->pluck('event.organizer_id')->unique()->count(),
         ];
 
         return view('sponsor.riwayat', [
@@ -114,14 +115,32 @@ class SponsorController extends Controller
         }
 
         $data = $request->validate([
-            'nominal' => 'required|integer|min:50000|max:100000000000',
-            'bentuk_dukungan' => 'required|string|max:60',
+            'nominal' => 'required|integer|min:10000|max:100000000000',
+            'bentuk_dukungan' => 'nullable|string|max:60',
             'catatan' => 'nullable|string|max:500',
+            'bukti_pembayaran' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ], [
+            'bukti_pembayaran.required' => 'Bukti transfer wajib diunggah saat memberikan donasi.',
+            'bukti_pembayaran.mimes' => 'Bukti transfer harus berformat PDF, JPG, atau PNG.',
+            'bukti_pembayaran.max' => 'Ukuran bukti transfer maksimal 5 MB.',
         ]);
 
-        $event->commitments()->create($data + ['sponsor_id' => $this->me()->id, 'status' => 'Menunggu Tanggapan']);
+        $path = $request->file('bukti_pembayaran')->store('pembayaran', 'local');
+
+        $event->commitments()->create([
+            'sponsor_id' => $this->me()->id,
+            'nominal' => $data['nominal'],
+            'nominal_klaim' => $data['nominal'],
+            'bentuk_dukungan' => $data['bentuk_dukungan'] ?? 'Dana Tunai',
+            'catatan' => $data['catatan'] ?? null,
+            'status' => 'Menunggu Tanggapan',
+            'status_pembayaran' => 'Menunggu Verifikasi',
+            'bukti_pembayaran' => $path,
+            'tanggal_bukti' => now(),
+        ]);
+
         Notifikasi::kirim($event->organizer->user_id,
-            $this->me()->nama_perusahaan." mengajukan komitmen pada \"{$event->judul}\".", route('organizer.komitmen'));
+            $this->me()->nama_perusahaan." mengirimkan bukti donasi untuk \"{$event->judul}\". Menunggu validasi nominal.", route('organizer.komitmen'));
 
         return back()->with('komitmen_sukses', $data['nominal']);
     }
@@ -178,7 +197,7 @@ class SponsorController extends Controller
 
     public function laporanIndex()
     {
-        $ids = $this->me()->commitments()->where('status', 'Diterima')->pluck('event_id');
+        $ids = $this->me()->commitments()->where('status', 'Diterima')->where('nominal', '>', 0)->pluck('event_id');
         $events = Event::whereIn('id', $ids)->with(['organizer', 'reports'])->latest()->get();
 
         return view('sponsor.laporan_index', compact('events'));
@@ -186,8 +205,8 @@ class SponsorController extends Controller
 
     public function laporanShow(Event $event)
     {
-        abort_unless($event->commitments()->where('sponsor_id', $this->me()->id)->where('status', 'Diterima')->exists(), 403);
-        $event->load(['organizer', 'commitments' => fn ($q) => $q->where('status', 'Diterima')]);
+        abort_unless($event->commitments()->where('sponsor_id', $this->me()->id)->where('status', 'Diterima')->where('nominal', '>', 0)->exists(), 403);
+        $event->load(['organizer', 'commitments' => fn ($q) => $q->where('status', 'Diterima')->where('nominal', '>', 0)]);
         $keuangan = $event->report('keuangan')?->load(['items.reviews' => fn ($q) => $q->where('sponsor_id', $this->me()->id)]);
         $hasil = $event->report('hasil_program');
         $reviews = ReportReview::where('sponsor_id', $this->me()->id)
@@ -207,7 +226,7 @@ class SponsorController extends Controller
     {
         $event = $report->event;
         abort_unless($report->status !== 'Draft'
-            && $event->commitments()->where('sponsor_id', $this->me()->id)->where('status', 'Diterima')->exists(), 403);
+            && $event->commitments()->where('sponsor_id', $this->me()->id)->where('status', 'Diterima')->where('nominal', '>', 0)->exists(), 403);
 
         $data = $request->validate([
             'status' => 'required|in:Diterima,Perlu Revisi',
@@ -313,5 +332,41 @@ class SponsorController extends Controller
 
         return redirect()->route('sponsor.pembayaran', $commitment)
             ->with('success', 'Bukti transfer terkirim. Admin akan memverifikasi dana Anda.');
+    }
+
+    // ---------- Inbox & Invoice Donasi Sponsor ----------
+    public function inbox()
+    {
+        $invoices = Commitment::where('sponsor_id', $this->me()->id)
+            ->where('status_pembayaran', 'Terverifikasi')
+            ->whereNotNull('nomor_invoice')
+            ->with(['event.organizer', 'event.category'])
+            ->latest('tanggal_validasi')
+            ->paginate(10);
+
+        return view('sponsor.inbox', compact('invoices'));
+    }
+
+    public function inboxShow(Commitment $commitment)
+    {
+        $this->ownCommitment($commitment);
+        abort_unless($commitment->hasInvoice(), 404, 'Invoice belum tersedia.');
+
+        $commitment->load(['event.organizer', 'event.category', 'sponsor']);
+
+        return view('sponsor.inbox_show', compact('commitment'));
+    }
+
+    public function invoiceDownload(Commitment $commitment)
+    {
+        $this->ownCommitment($commitment);
+        abort_unless($commitment->hasInvoice(), 404, 'Invoice belum tersedia.');
+
+        $pdf = SimpleInvoicePdf::generate($commitment);
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $commitment->nomor_invoice . '.pdf"',
+        ]);
     }
 }

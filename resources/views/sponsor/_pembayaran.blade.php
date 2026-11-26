@@ -9,7 +9,14 @@
         @elseif($c->status_pembayaran === 'Menunggu Verifikasi')
           Bukti terkirim {{ $c->tanggal_bukti?->format('d M Y H:i') }}. Menunggu verifikasi Organizer.
         @elseif($c->status_pembayaran === 'Terverifikasi')
-          Pembayaran sudah diverifikasi.
+          @if($c->hasInvoice())
+            Pembayaran divalidasi ({{ $c->nomor_invoice }}).
+            @if($c->hasNominalAdjustment())
+              Disesuaikan dari @rp($c->nominal_klaim) menjadi @rp($c->nominal).
+            @endif
+          @else
+            Pembayaran sudah diverifikasi.
+          @endif
         @else
           Bukti pembayaran perlu diunggah ulang.
         @endif
@@ -19,6 +26,10 @@
       <x-badge :s="$c->status_pembayaran"/>
       @if($c->bukti_pembayaran)
         <a href="{{ route('files.show', ['pembayaran', $c->id]) }}" target="_blank" class="text-xs font-semibold text-brand underline">Lihat bukti</a>
+      @endif
+      @if($c->hasInvoice())
+        <a href="{{ route('sponsor.inbox.show', $c) }}" class="btn btn-outline btn-sm">Buka Invoice</a>
+        <a href="{{ route('sponsor.inbox.download', $c) }}" class="btn btn-primary btn-sm">Download PDF</a>
       @endif
       @if($c->status_pembayaran !== 'Terverifikasi')
         <button type="button" @click="open = !open" class="btn btn-primary btn-sm">{{ $c->bukti_pembayaran ? 'Ganti Bukti' : 'Unggah Bukti Pembayaran' }}</button>
